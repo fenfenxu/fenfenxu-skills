@@ -11,3 +11,9 @@ __pycache__/
 .vscode/
 *.swp
 *~
+
+# Agent local install dirs — source of truth is skills/
+.agents/
+.agent/
+.claude/skills/
+.cursor/skills/
