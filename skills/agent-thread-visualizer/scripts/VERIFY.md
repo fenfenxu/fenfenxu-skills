@@ -1,4 +1,4 @@
-# find-thread 验证用例
+# find-thread 验证用例（要有说服力）
 
 在本 skill 根目录执行：
 
@@ -7,39 +7,25 @@ python3 scripts/verify-find-thread.py
 python3 scripts/verify-find-thread.py -v
 ```
 
-脚本会先按 `references/host-*.md` 的路径在本机抽样真实会话，再调用 `scripts/find-thread` 回查。
+脚本按 `references/host-*.md` 在本机抽样真实会话，再对每个宿主跑 **2×2 矩阵**：
 
-## 用例
+|  | 应命中（+） | 不应命中（−） |
+|--|------------|--------------|
+| **按会话 ID** | 真实 UUID / 短 UUID → 必须命中，且路径一致 | 伪造 UUID `deadbeef-…` → 必须 0 命中 |
+| **按名称** | 从该会话首条用户消息抽出的特征子串 → 必须命中该会话 | 无意义词 `zzznomatch-find-thread-…` → 必须 0 命中 |
 
-| ID | 名称 | 操作 | 期望 |
-|----|------|------|------|
-| A | `{host} / full UUID` | `find-thread <uuid> -a <host> --all --json` | 命中，且 `path` / `session_id` 对上抽样文件 |
-| B | `{host} / short UUID` | `find-thread <uuid前8位> -a <host> --all` | 仍能命中同一会话 |
-| C | `workbuddy / keyword 水火箭` | `find-thread 水火箭 -a workbuddy --all` | 结果中含 `0d2e4064-…`（若本机有该文件；否则 SKIP） |
-| D | `{host} / path equality` | 同 A | 返回的 `path` 与抽样文件**完全一致** |
+名称查询**不写死外机 ID**，而是从本机 fixture 的 prompt 现抽（例如「水火箭」「找到 thread」），换机器也能跑。
 
 覆盖宿主（本机有数据才测）：`cursor` `codex` `claude` `workbuddy` `kimi`。
 
-## 手工等价命令（可选）
+## 用例清单（每个有数据的宿主各一套）
 
-把下面的 `<uuid>` / 路径换成 `verify-find-thread.py` 打印的 Fixtures：
+| 标记 | 含义 | 期望 |
+|------|------|------|
+| `ID+` full UUID | 用真实会话 ID 查 | 命中，且 `path` 与抽样文件完全一致 |
+| `ID+` short UUID | 用 ID 前 8 位查 | 仍命中同一会话 |
+| `ID−` fake UUID | 用绝不存在的 UUID 查 | **零**命中 |
+| `name+` | 用从 prompt 抽出的名称/关键词查 | 结果中含该会话 |
+| `name−` | 用无意义字符串查 | **零**命中 |
 
-```bash
-# 例：Cursor
-python3 scripts/find-thread 93244b88-9875-461f-b7e8-fcca1a518644 -a cursor --all --json
-
-# 例：Codex
-python3 scripts/find-thread 01a002e3-01c6-7cc0-9775-392837f85901 -a codex --all --json
-
-# 例：Claude
-python3 scripts/find-thread c6516df6-28a4-489c-adc1-715d0e71120a -a claude --all --json
-
-# 例：Workbuddy ID + 关键词
-python3 scripts/find-thread 0d2e4064-c980-4fe7-8cee-89cc58d44e97 -a workbuddy --all --json
-python3 scripts/find-thread 水火箭 -a workbuddy --all --json
-
-# 例：kimi
-python3 scripts/find-thread 9d7ab858-1d06-4135-b985-2b69d6668553 -a kimi --all --json
-```
-
-> 上面 UUID 是某次本机抽样值，会过期/因机器而异；以验证脚本打印的 Fixtures 为准。
+只有「全能命中」不够；没有负例，验证没有说服力。

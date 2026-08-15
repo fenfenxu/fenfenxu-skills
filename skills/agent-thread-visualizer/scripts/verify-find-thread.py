@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
-"""Verify scripts/find-thread against real local host stores.
+"""Verify scripts/find-thread with a 2×2 matrix that actually has teeth.
 
-Discovers one existing transcript per host from the paths documented in
-references/host-*.md, then checks that find-thread returns the same file
-(by UUID and, for Workbuddy, by a known keyword).
+Coverage (per available host fixture):
 
-Usage (from this skill root, or via absolute path):
+  |            | should HIT                         | should MISS                          |
+  |------------|------------------------------------|--------------------------------------|
+  | by ID      | real session UUID / short UUID     | fabricated UUID never on disk        |
+  | by name    | distinctive prompt/title substring | nonsense keyword guaranteed absent   |
+
+Fixtures are discovered from paths in references/host-*.md (live local stores).
+Name queries are extracted from each fixture's first user message — not hard-coded
+IDs from another machine — so the suite stays portable.
+
+Usage (from this skill root):
 
   python3 scripts/verify-find-thread.py
-  python3 scripts/verify-find-thread.py --verbose
+  python3 scripts/verify-find-thread.py -v
 
-Exit 0 = all checks passed; 1 = failure; 2 = not enough fixtures on this machine.
+Exit 0 = all ran checks passed; 1 = failure; 2 = no fixtures on this machine.
 """
 
 from __future__ import annotations
@@ -20,7 +27,8 @@ import json
 import re
 import subprocess
 import sys
-from dataclasses import dataclass
+import uuid
+from dataclasses import dataclass, field
 from pathlib import Path
 
 HOME = Path.home()
@@ -31,20 +39,32 @@ UUID_RE = re.compile(
     re.I,
 )
 
+# Guaranteed-absent probes (negative cases)
+FAKE_UUID = "deadbeef-dead-4bef-8ead-beefdeadbeef"
+FAKE_NAME = "zzznomatch-find-thread-7f3a9c2e-qx"
+
 
 @dataclass
 class Fixture:
     host: str
     path: Path
     session_id: str
+    name_query: str = ""
     note: str = ""
+    skip_name: str = ""  # reason if name+ cannot be built
+
+
+@dataclass
+class Check:
+    name: str
+    ok: bool
+    detail: str = ""
 
 
 def uuid_from_path(path: Path) -> str:
     m = UUID_RE.search(path.name) or UUID_RE.search(str(path))
     if m:
         return m.group(0)
-    # kimi: .../session_<uuid>/...
     m = re.search(r"session_([0-9a-f-]{36})", str(path), re.I)
     return m.group(1) if m else path.stem
 
@@ -57,62 +77,214 @@ def pick_newest(files: list[Path]) -> Path | None:
     return existing[0]
 
 
+def _text_from_content(content) -> str:
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                for k in ("text", "input_text", "content"):
+                    if isinstance(item.get(k), str):
+                        parts.append(item[k])
+                        break
+        return "\n".join(parts)
+    if isinstance(content, dict):
+        return _text_from_content(content.get("text") or content.get("content"))
+    return str(content)
+
+
+def clean_prompt(text: str) -> str:
+    text = text or ""
+    text = re.sub(r"<system-reminder[\s\S]*?</system-reminder>", " ", text)
+    text = re.sub(r"<user_query>([\s\S]*?)</user_query>", r"\1", text)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+_BOILERPLATE_MARKERS = (
+    "<recommended_plugins>",
+    "<environment_context>",
+    "<system-reminder",
+    "plugins that are available but not installed",
+)
+
+
+def _is_boilerplate(text: str) -> bool:
+    low = (text or "").lower()
+    return any(m.lower() in low for m in _BOILERPLATE_MARKERS)
+
+
+def extract_prompt(host: str, path: Path, max_lines: int = 400) -> str:
+    """First *substantive* user prompt (skip host boilerplate injections)."""
+    candidates: list[str] = []
+    try:
+        with path.open("r", encoding="utf-8", errors="ignore") as f:
+            for i, line in enumerate(f):
+                if i >= max_lines:
+                    break
+                try:
+                    d = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                text = ""
+                if host == "codex":
+                    pl = d.get("payload") or {}
+                    if not (
+                        (d.get("type") == "response_item" and pl.get("type") == "message" and pl.get("role") == "user")
+                        or (pl.get("role") == "user" and pl.get("content"))
+                    ):
+                        continue
+                    text = clean_prompt(_text_from_content(pl.get("content")))
+                elif host == "workbuddy":
+                    if not (d.get("type") == "message" and d.get("role") == "user"):
+                        continue
+                    text = clean_prompt(_text_from_content(d.get("content")))
+                else:
+                    msg = d.get("message")
+                    role = d.get("role")
+                    if isinstance(msg, dict):
+                        role = role or msg.get("role")
+                        content = msg.get("content")
+                    else:
+                        content = d.get("content")
+                    if not (d.get("type") == "user" or role == "user"):
+                        continue
+                    text = clean_prompt(_text_from_content(content))
+                if not text or _is_boilerplate(text):
+                    continue
+                # Prefer shorter real asks over giant dumps
+                if 8 <= len(text) <= 500:
+                    return text
+                candidates.append(text)
+    except OSError:
+        return ""
+    return candidates[0] if candidates else ""
+
+
+def pick_name_query(prompt: str) -> str:
+    """Choose a distinctive substring suitable for name/title search."""
+    prompt = clean_prompt(prompt)
+    if not prompt:
+        return ""
+
+    # Prefer solid CJK phrases (4–16 chars)
+    cjk_runs = re.findall(r"[\u4e00-\u9fff]{4,16}", prompt)
+    ban_cjk = {"帮我看看", "帮我看下", "请帮我", "你好啊", "请问下", "帮我这个看一看"}
+    for run in sorted(cjk_runs, key=len, reverse=True):
+        if run in ban_cjk:
+            continue
+        if run.startswith("帮我") and len(run) <= 6:
+            continue
+        return run
+
+    # Prefer quoted skill / product names
+    m = re.search(r'@skill:"([^"]+)"', prompt)
+    if m:
+        return m.group(1)
+
+    # Multi-word Latin phrase beats a single generic token like "plugins"
+    m = re.search(r"[A-Za-z][A-Za-z0-9_-]+(?:\s+[A-Za-z][A-Za-z0-9_-]+){1,4}", prompt)
+    if m and len(m.group(0)) >= 10:
+        return m.group(0)[:40]
+
+    ban_en = {
+        "saturday", "sunday", "monday", "tuesday", "wednesday", "thursday", "friday",
+        "https", "http", "plugins", "plugin", "available", "installed", "skills",
+        "here", "list", "that", "are", "but", "not",
+    }
+    for m in re.finditer(r"[A-Za-z][A-Za-z0-9_-]{4,}", prompt):
+        tok = m.group(0)
+        if tok.lower() in ban_en:
+            continue
+        if re.fullmatch(r"[0-9a-fA-F-]{8,}", tok):
+            continue
+        return tok
+
+    body = re.sub(
+        r"^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday).*?UTC[^\)]*\)\s*",
+        "",
+        prompt,
+    )
+    body = body.strip() or prompt
+    if len(body) >= 8:
+        return body[0:24].strip()
+    return ""
+
+
 def discover_fixtures() -> list[Fixture]:
     fixtures: list[Fixture] = []
+
+    def add(host: str, path: Path | None, note: str) -> None:
+        if not path or not path.is_file():
+            return
+        sid = uuid_from_path(path)
+        prompt = extract_prompt(host, path)
+        name_q = pick_name_query(prompt)
+        skip = ""
+        if not name_q:
+            skip = "no distinctive prompt substring"
+        fixtures.append(
+            Fixture(
+                host=host,
+                path=path,
+                session_id=sid,
+                name_query=name_q,
+                note=note,
+                skip_name=skip,
+            )
+        )
 
     # Cursor — host-cursor.md
     cursor_root = HOME / ".cursor" / "projects"
     cursor_files = list(cursor_root.glob("*/agent-transcripts/**/*.jsonl")) if cursor_root.exists() else []
-    # Prefer fenfenxu-skills project when present (stable for this repo)
-    preferred = [
-        p
-        for p in cursor_files
-        if "fenfenxu-skills" in str(p)
-    ]
-    c = pick_newest(preferred) or pick_newest(cursor_files)
-    if c:
-        fixtures.append(Fixture("cursor", c, uuid_from_path(c), "~/.cursor/projects/*/agent-transcripts/**/*.jsonl"))
+    preferred = [p for p in cursor_files if "fenfenxu-skills" in str(p)]
+    add("cursor", pick_newest(preferred) or pick_newest(cursor_files), "~/.cursor/projects/*/agent-transcripts/**/*.jsonl")
 
     # Codex — host-codex.md
     codex_files: list[Path] = []
     for root in (HOME / ".codex" / "sessions", HOME / ".codex" / "archived_sessions"):
         if root.exists():
             codex_files.extend(root.rglob("rollout-*.jsonl"))
-    x = pick_newest(codex_files)
-    if x:
-        fixtures.append(Fixture("codex", x, uuid_from_path(x), "~/.codex/sessions/**/rollout-*.jsonl"))
+    add("codex", pick_newest(codex_files), "~/.codex/sessions/**/rollout-*.jsonl")
 
     # Claude — host-claude-code.md
     claude_root = HOME / ".claude" / "projects"
     claude_files = list(claude_root.glob("*/*.jsonl")) if claude_root.exists() else []
-    cl = pick_newest(claude_files)
-    if cl:
-        fixtures.append(Fixture("claude", cl, uuid_from_path(cl), "~/.claude/projects/<encoded>/*.jsonl"))
+    add("claude", pick_newest(claude_files), "~/.claude/projects/<encoded>/*.jsonl")
 
     # Workbuddy — host-workbuddy.md
     wb_root = HOME / ".workbuddy" / "projects"
     wb_files = list(wb_root.glob("*/*.jsonl")) if wb_root.exists() else []
-    # Prefer known 水火箭 session if present
-    rocket = wb_root / "Users-liuxu-WorkBuddy-2026-08-10-20-17-43" / "0d2e4064-c980-4fe7-8cee-89cc58d44e97.jsonl"
-    w = rocket if rocket.is_file() else pick_newest(wb_files)
-    if w:
-        fixtures.append(Fixture("workbuddy", w, uuid_from_path(w), "~/.workbuddy/projects/<encoded>/<uuid>.jsonl"))
+    rocket = (
+        wb_root
+        / "Users-liuxu-WorkBuddy-2026-08-10-20-17-43"
+        / "0d2e4064-c980-4fe7-8cee-89cc58d44e97.jsonl"
+    )
+    add(
+        "workbuddy",
+        rocket if rocket.is_file() else pick_newest(wb_files),
+        "~/.workbuddy/projects/<encoded>/<uuid>.jsonl",
+    )
 
     # kimi — host-kimi-code.md
     kimi_files: list[Path] = []
     for root in (HOME / ".kimi-code" / "sessions", HOME / ".kimi" / "sessions"):
         if root.exists():
             kimi_files.extend(root.rglob("wire.jsonl"))
-    k = pick_newest(kimi_files)
-    if k:
-        fixtures.append(Fixture("kimi", k, uuid_from_path(k), "~/.kimi-code/sessions/**/wire.jsonl"))
+    add("kimi", pick_newest(kimi_files), "~/.kimi-code/sessions/**/wire.jsonl")
 
     return fixtures
 
 
 def run_find(*args: str) -> list[dict]:
     proc = subprocess.run(
-        [sys.executable, str(FIND_THREAD), *args, "--json", "-n", "15"],
+        [sys.executable, str(FIND_THREAD), *args, "--json", "-n", "20"],
         capture_output=True,
         text=True,
         cwd=str(SKILL_ROOT),
@@ -136,17 +308,19 @@ def hit_matches(hits: list[dict], fixture: Fixture) -> bool:
         if fixture.session_id and (
             fixture.session_id == sid or fixture.session_id in path
         ):
-            # same id under documented tree
-            if fixture.host in path.replace("\\", "/"):
-                return True
-            # host folder names differ slightly (workbuddy vs .workbuddy)
-            if fixture.session_id in path:
-                return True
+            return True
     return False
 
 
+def record(results: list[Check], name: str, ok: bool, detail: str = "", verbose: bool = False) -> None:
+    results.append(Check(name, ok, detail))
+    print(f"{'PASS' if ok else 'FAIL'}  {name}" + (f"  ({detail})" if detail else ""))
+    if verbose and detail:
+        pass
+
+
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--verbose", "-v", action="store_true")
     ap.add_argument(
         "--hosts",
@@ -163,74 +337,105 @@ def main() -> int:
     fixtures = [f for f in discover_fixtures() if f.host in want]
     if not fixtures:
         print("No local fixtures found under documented host paths.", file=sys.stderr)
-        print("Install/use Cursor, Codex, Claude Code, Workbuddy, or kimi-code first.", file=sys.stderr)
         return 2
 
-    print("Fixtures (from documented paths):")
+    print("Matrix: ID×name  ×  hit×miss")
+    print("Fixtures:")
     for f in fixtures:
         print(f"  [{f.host}] id={f.session_id}")
         print(f"           path={f.path}")
-        print(f"           manual={f.note}")
+        print(f"           name_query={f.name_query!r}" + (f"  (skip: {f.skip_name})" if f.skip_name else ""))
     print()
 
-    results: list[tuple[str, bool, str]] = []
+    results: list[Check] = []
+    skipped = 0
 
-    # --- Case A: full UUID per host ---
     for f in fixtures:
-        name = f"{f.host} / full UUID"
-        hits = run_find(f.session_id, "-a", f.host, "--all")
-        ok = hit_matches(hits, f)
-        detail = f"hits={len(hits)}"
-        if hits and args.verbose:
-            detail += f" top={hits[0].get('path')}"
-        elif hits:
-            detail += f" got={hits[0].get('path')}"
-        results.append((name, ok, detail))
-        print(f"{'PASS' if ok else 'FAIL'}  {name}  ({detail})")
+        host = f.host
+
+        # ---- ID / HIT (full) ----
+        hits = run_find(f.session_id, "-a", host, "--all")
+        ok = hit_matches(hits, f) and any(
+            (h.get("path") or "") == str(f.path) for h in hits
+        )
+        record(
+            results,
+            f"{host} | ID+ | full UUID → hit exact path",
+            ok,
+            f"hits={len(hits)}",
+            args.verbose,
+        )
         if args.verbose and hits:
-            for h in hits[:3]:
-                print(f"         -> {h.get('path')}")
+            print(f"         -> {hits[0].get('path')}")
 
-    # --- Case B: short UUID (first 8) for each ---
-    for f in fixtures:
+        # ---- ID / HIT (short) ----
         short = f.session_id[:8]
-        name = f"{f.host} / short UUID {short}"
-        hits = run_find(short, "-a", f.host, "--all")
+        hits = run_find(short, "-a", host, "--all")
         ok = hit_matches(hits, f)
-        results.append((name, ok, f"hits={len(hits)}"))
-        print(f"{'PASS' if ok else 'FAIL'}  {name}  (hits={len(hits)})")
+        record(
+            results,
+            f"{host} | ID+ | short UUID {short} → hit",
+            ok,
+            f"hits={len(hits)}",
+            args.verbose,
+        )
 
-    # --- Case C: Workbuddy keyword (only if rocket fixture present) ---
-    rocket_id = "0d2e4064-c980-4fe7-8cee-89cc58d44e97"
-    rocket = next((f for f in fixtures if f.host == "workbuddy" and f.session_id == rocket_id), None)
-    if rocket:
-        name = "workbuddy / keyword 水火箭"
-        hits = run_find("水火箭", "-a", "workbuddy", "--all")
-        ok = hit_matches(hits, rocket)
-        results.append((name, ok, f"hits={len(hits)}"))
-        print(f"{'PASS' if ok else 'FAIL'}  {name}  (hits={len(hits)})")
-        if args.verbose:
-            for h in hits:
-                print(f"         -> {h.get('session_id')} {h.get('path')}")
-    else:
-        print("SKIP  workbuddy / keyword 水火箭  (fixture session not on this machine)")
+        # ---- ID / MISS ----
+        # Use a per-host fake so we don't accidentally collide; still globally unused.
+        fake = FAKE_UUID if FAKE_UUID != f.session_id else str(uuid.uuid4())
+        hits = run_find(fake, "-a", host, "--all")
+        ok = not hit_matches(hits, f) and not any(fake in (h.get("path") or "") for h in hits)
+        # Stronger: zero hits preferred; allow unrelated hits only if fake id absent
+        ok = len(hits) == 0 or (
+            not any(fake[:8].lower() in (h.get("session_id") or "").lower() for h in hits)
+            and not any(fake in (h.get("path") or "") for h in hits)
+        )
+        # For fabricated full UUID, expect empty
+        ok = len(hits) == 0
+        record(
+            results,
+            f"{host} | ID− | fake UUID → miss",
+            ok,
+            f"hits={len(hits)}",
+            args.verbose,
+        )
 
-    # --- Case D: path equality (full UUID must return exact path) ---
-    for f in fixtures:
-        name = f"{f.host} / path equality"
-        hits = run_find(f.session_id, "-a", f.host, "--all")
-        got = Path(hits[0]["path"]) if hits else None
-        ok = got == f.path
-        results.append((name, ok, f"got={got}"))
-        print(f"{'PASS' if ok else 'FAIL'}  {name}")
-        if not ok:
-            print(f"         expect {f.path}")
-            print(f"         got    {got}")
+        # ---- NAME / HIT ----
+        if f.skip_name or not f.name_query:
+            print(f"SKIP  {host} | name+ | (no usable prompt name)")
+            skipped += 1
+        else:
+            hits = run_find(f.name_query, "-a", host, "--all")
+            ok = hit_matches(hits, f)
+            record(
+                results,
+                f"{host} | name+ | {f.name_query!r} → hit",
+                ok,
+                f"hits={len(hits)}",
+                args.verbose,
+            )
+            if args.verbose:
+                for h in hits[:5]:
+                    print(f"         -> {h.get('session_id')} {h.get('prompt','')[:50]}")
 
-    passed = sum(1 for _, ok, _ in results if ok)
-    failed = sum(1 for _, ok, _ in results if not ok)
+        # ---- NAME / MISS ----
+        hits = run_find(FAKE_NAME, "-a", host, "--all")
+        ok = len(hits) == 0
+        record(
+            results,
+            f"{host} | name− | nonsense → miss",
+            ok,
+            f"hits={len(hits)}",
+            args.verbose,
+        )
+
+    passed = sum(1 for c in results if c.ok)
+    failed = sum(1 for c in results if not c.ok)
     print()
-    print(f"Summary: {passed} passed, {failed} failed, {len(fixtures)} fixtures")
+    print(
+        f"Summary: {passed} passed, {failed} failed, {skipped} skipped, "
+        f"{len(fixtures)} fixtures × {{ID±, name±}}"
+    )
     return 0 if failed == 0 else 1
 
 
