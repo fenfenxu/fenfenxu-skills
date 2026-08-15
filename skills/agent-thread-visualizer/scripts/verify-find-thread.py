@@ -41,7 +41,7 @@ UUID_RE = re.compile(
 
 # Guaranteed-absent probes (negative cases)
 FAKE_UUID = "deadbeef-dead-4bef-8ead-beefdeadbeef"
-FAKE_NAME = "zzznomatch-find-thread-7f3a9c2e-qx"
+FAKE_NAME = "zzznomatchqx9plumcake-notarealsessiontitle"
 
 
 @dataclass

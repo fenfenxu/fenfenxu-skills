@@ -26,8 +26,8 @@ Host manual for locating agent conversation threads stored by Cursor IDE. Treat 
 ## ID vs name
 
 - **ID:** transcript UUID / filename stem (e.g. `a1b2c3d4-e5f6-...` from `a1b2c3d4-e5f6-....jsonl`)
-- **Name:** 待核实 — may need scanning jsonl for UI title fields, first user message snippet, or parent-agent link text; if absent, match by UUID substring or first user message snippet
-- User-facing chat titles in Cursor UI are not guaranteed to appear in transcript filenames; do not assume filename equals display name
+- **Name (important):** Cursor sidebar titles are **not** stored in transcript jsonl. When present, read UI `name`/`subtitle` from `~/Library/Application Support/Cursor/User/globalStorage/state.vscdb` key `composer.composerHeaders` (composerId == transcript UUID). Newer agent chats may omit headers — then treat the **first user message** as the name source and match with **tokenized / hyphen-normalized** search (do not require the English UI title string to appear verbatim in the jsonl).
+- User-facing chat titles in Cursor UI are not guaranteed to appear in transcript filenames or body text; do not assume filename equals display name
 
 ## Probe order
 

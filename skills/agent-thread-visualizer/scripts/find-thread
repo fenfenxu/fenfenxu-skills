@@ -4,9 +4,16 @@
 One-liner examples:
   find-thread                         # recent threads for $PWD
   find-thread 6b01c691                # ID / path fragment
+  find-thread "Agent thread visualizer installation"   # UI name / first-user tokens
   find-thread 水火箭                   # fuzzy title / first-user text
   find-thread -a workbuddy --all      # one host, no project scope
   find-thread --json -n 20 shader
+
+Name search (not ID):
+  1) Cursor UI titles from composer.composerHeaders when present
+  2) Else tokenized match on first user message (hyphen/space normalized)
+     so English UI titles can still hit Chinese/hyphenated prompts
+  3) Exact full-text rg only with --deep
 
 Design for speed (not exhaustive recall):
   1) Prefer project-scoped dirs derived from cwd (ms-level)
@@ -50,7 +57,8 @@ class Hit:
     mtime: float
     project: str
     prompt: str
-    match: str  # id | path | prompt | rg | recent
+    match: str  # id | path | title | name | rg | prompt | recent
+    title: str = ""
 
     def age(self) -> str:
         return _fmt_age(self.mtime)
@@ -112,6 +120,139 @@ def looks_like_id(q: str) -> bool:
     if UUID_RE.search(q) and " " not in q and len(q) <= 64:
         return True
     return False
+
+
+_STOPWORDS = {
+    "a", "an", "the", "and", "or", "of", "to", "for", "in", "on", "at", "by", "with",
+    "is", "are", "was", "be", "this", "that", "from", "into", "about", "如何", "怎么",
+    "一个", "什么", "这个",
+}
+
+_WEAK_NAME_TOKENS = {
+    "install", "installation", "installed", "error", "issue", "problem", "test",
+    "chat", "general", "help", "please", "new", "session",
+}
+
+
+def normalize_name_text(text: str) -> str:
+    text = (text or "").lower()
+    text = text.replace("_", " ").replace("-", " ")
+    text = re.sub(r"[^\w\u4e00-\u9fff]+", " ", text, flags=re.UNICODE)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def name_tokens(query: str) -> list[str]:
+    norm = normalize_name_text(query)
+    toks = []
+    for t in norm.split():
+        if t in _STOPWORDS:
+            continue
+        if len(t) < 2:
+            continue
+        # keep CJK bigrams+ and latin tokens len>=3
+        if re.search(r"[\u4e00-\u9fff]", t):
+            if len(t) >= 2:
+                toks.append(t)
+        elif len(t) >= 3:
+            toks.append(t)
+    # de-dupe preserving order
+    out: list[str] = []
+    for t in toks:
+        if t not in out:
+            out.append(t)
+    return out
+
+
+def name_match_score(query: str, title: str = "", prompt: str = "") -> float:
+    """Score how well a UI title / first-user prompt matches a name query.
+
+    Cursor UI titles often are English summaries; transcripts may only have the
+    first user message (possibly Chinese) and `composerHeaders.name` when present.
+    Full-phrase substring search is the wrong mechanism — use token coverage on
+    normalized title+prompt (so "Agent thread visualizer installation" can hit
+    a prompt containing `agent-thread-visualizer`).
+    """
+    q = (query or "").strip()
+    if not q:
+        return 0.0
+    title_n = normalize_name_text(title)
+    prompt_n = normalize_name_text(prompt)
+    blob = f"{title_n} {prompt_n}".strip()
+    if not blob:
+        return 0.0
+
+    qn = normalize_name_text(q)
+    if qn and qn in title_n:
+        return 1.0
+    if qn and qn in prompt_n:
+        return 0.95
+
+    toks = name_tokens(q)
+    if not toks:
+        return 1.0 if qn in blob else 0.0
+
+    matched = [t for t in toks if t in blob]
+    if not matched:
+        return 0.0
+
+    # Distinctive tokens (long / non-weak) gate false positives like
+    # "zzznomatch-find-thread-…" matching on bare "find"+"thread".
+    distinctive = [t for t in toks if len(t) >= 8 or (t not in _WEAK_NAME_TOKENS and len(t) >= 6)]
+    if distinctive and not any(t in blob for t in distinctive):
+        return 0.0
+
+    strong = [t for t in matched if t not in _WEAK_NAME_TOKENS]
+    if not strong and len(matched) < 2:
+        return 0.0
+
+    ratio = len(matched) / len(toks)
+    # Need decent coverage: >=2 tokens or >=60% of query tokens
+    if len(matched) < 2 and ratio < 0.6:
+        return 0.0
+    bonus = 0.15 if title_n and any(t in title_n for t in strong or matched) else 0.0
+    return min(1.0, ratio + bonus)
+
+
+def load_cursor_titles() -> dict[str, str]:
+    """Map composer/agent UUID -> UI name/subtitle from Cursor state DB."""
+    db = (
+        HOME
+        / "Library"
+        / "Application Support"
+        / "Cursor"
+        / "User"
+        / "globalStorage"
+        / "state.vscdb"
+    )
+    if not db.is_file():
+        return {}
+    try:
+        import sqlite3
+
+        con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+        row = con.execute(
+            "SELECT value FROM ItemTable WHERE key='composer.composerHeaders'"
+        ).fetchone()
+        con.close()
+        if not row:
+            return {}
+        raw = row[0].decode("utf-8") if isinstance(row[0], bytes) else row[0]
+        data = json.loads(raw)
+        out: dict[str, str] = {}
+        for c in data.get("allComposers") or []:
+            if not isinstance(c, dict):
+                continue
+            cid = c.get("composerId")
+            if not cid or cid == "empty-state-draft":
+                continue
+            name = (c.get("name") or "").strip()
+            sub = (c.get("subtitle") or "").strip()
+            label = name or sub
+            if label:
+                out[str(cid)] = label
+        return out
+    except Exception:
+        return {}
 
 
 # ---------- discovery (path only; no content) ----------
@@ -259,7 +400,7 @@ def _text_from_content(content) -> str:
     return str(content)
 
 
-def _clean_prompt(text: str, limit: int = 120) -> str:
+def _clean_prompt(text: str, limit: int = 240) -> str:
     text = text or ""
     # strip common wrappers
     text = re.sub(r"<system-reminder[\s\S]*?</system-reminder>", " ", text)
@@ -271,37 +412,25 @@ def _clean_prompt(text: str, limit: int = 120) -> str:
     return text
 
 
-def extract_prompt(host: str, path: Path, max_lines: int = 80) -> str:
+_BOILERPLATE_MARKERS = (
+    "<recommended_plugins>",
+    "<environment_context>",
+    "plugins that are available but not installed",
+)
+
+
+def _is_boilerplate(text: str) -> bool:
+    low = (text or "").lower()
+    return any(m.lower() in low for m in _BOILERPLATE_MARKERS)
+
+
+def extract_prompt(host: str, path: Path, max_lines: int = 400) -> str:
+    """First substantive user prompt (skip host boilerplate injections)."""
     if path.is_dir():
         return ""
+    candidates: list[str] = []
     try:
         with path.open("r", encoding="utf-8", errors="ignore") as f:
-            if host == "codex":
-                for i, line in enumerate(f):
-                    if i >= max_lines * 3:
-                        break
-                    try:
-                        d = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-                    pl = d.get("payload") or {}
-                    if d.get("type") == "response_item" and pl.get("type") == "message" and pl.get("role") == "user":
-                        return _clean_prompt(_text_from_content(pl.get("content")))
-                    if pl.get("role") == "user" and pl.get("content"):
-                        return _clean_prompt(_text_from_content(pl.get("content")))
-                return ""
-            if host == "workbuddy":
-                for i, line in enumerate(f):
-                    if i >= max_lines:
-                        break
-                    try:
-                        d = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-                    if d.get("type") == "message" and d.get("role") == "user":
-                        return _clean_prompt(_text_from_content(d.get("content")))
-                return ""
-            # cursor / claude / kimi-ish
             for i, line in enumerate(f):
                 if i >= max_lines:
                     break
@@ -309,18 +438,42 @@ def extract_prompt(host: str, path: Path, max_lines: int = 80) -> str:
                     d = json.loads(line)
                 except json.JSONDecodeError:
                     continue
-                role = d.get("role")
-                msg = d.get("message")
-                if isinstance(msg, dict):
-                    role = role or msg.get("role")
-                    content = msg.get("content")
+                text = ""
+                if host == "codex":
+                    pl = d.get("payload") or {}
+                    if not (
+                        (
+                            d.get("type") == "response_item"
+                            and pl.get("type") == "message"
+                            and pl.get("role") == "user"
+                        )
+                        or (pl.get("role") == "user" and pl.get("content"))
+                    ):
+                        continue
+                    text = _clean_prompt(_text_from_content(pl.get("content")), limit=500)
+                elif host == "workbuddy":
+                    if not (d.get("type") == "message" and d.get("role") == "user"):
+                        continue
+                    text = _clean_prompt(_text_from_content(d.get("content")), limit=500)
                 else:
-                    content = d.get("content")
-                if d.get("type") == "user" or role == "user":
-                    return _clean_prompt(_text_from_content(content))
+                    role = d.get("role")
+                    msg = d.get("message")
+                    if isinstance(msg, dict):
+                        role = role or msg.get("role")
+                        content = msg.get("content")
+                    else:
+                        content = d.get("content")
+                    if not (d.get("type") == "user" or role == "user"):
+                        continue
+                    text = _clean_prompt(_text_from_content(content), limit=500)
+                if not text or _is_boilerplate(text):
+                    continue
+                if 8 <= len(text) <= 500:
+                    return text
+                candidates.append(text)
     except OSError:
         return ""
-    return ""
+    return candidates[0] if candidates else ""
 
 
 def session_id_of(host: str, path: Path) -> str:
@@ -408,20 +561,32 @@ def path_id_match(path: Path, query: str) -> bool:
     return q in path.name.lower() or q in str(path).lower()
 
 
-def to_hit(host: str, path: Path, match: str, cache: SnippetCache, need_prompt: bool) -> Hit:
+def to_hit(
+    host: str,
+    path: Path,
+    match: str,
+    cache: SnippetCache,
+    need_prompt: bool,
+    titles: Optional[dict[str, str]] = None,
+) -> Hit:
     try:
         mtime = path.stat().st_mtime
     except OSError:
         mtime = 0.0
     prompt = cache.get(host, path) if need_prompt else ""
+    sid = session_id_of(host, path)
+    title = ""
+    if titles and sid:
+        title = titles.get(sid) or ""
     return Hit(
         host=host,
-        session_id=session_id_of(host, path),
+        session_id=sid,
         path=str(path),
         mtime=mtime,
         project=project_of(host, path),
         prompt=prompt,
         match=match,
+        title=title,
     )
 
 
@@ -488,13 +653,25 @@ def find_threads(
 
     q = (query or "").strip()
     id_mode = bool(q) and looks_like_id(q)
+    titles = load_cursor_titles() if (not id_mode or not q) and "cursor" in hosts else {}
+    if q and not id_mode and "cursor" in hosts and not titles:
+        titles = load_cursor_titles()
 
     # Pass 1: ID / path match (no content) — always cheapest
     if q:
         for host, files in discovered.items():
             for p in files:
                 if path_id_match(p, q):
-                    add(to_hit(host, p, "id" if id_mode else "path", cache, need_prompt=True))
+                    add(
+                        to_hit(
+                            host,
+                            p,
+                            "id" if id_mode else "path",
+                            cache,
+                            need_prompt=True,
+                            titles=titles,
+                        )
+                    )
 
     # Pass 2: if ID mode and scoped miss, broaden once
     if id_mode and not hits and not all_projects:
@@ -502,67 +679,73 @@ def find_threads(
         for host, files in discovered.items():
             for p in files:
                 if path_id_match(p, q):
-                    add(to_hit(host, p, "id", cache, need_prompt=True))
+                    add(to_hit(host, p, "id", cache, need_prompt=True, titles=titles))
 
-    # Pass 3: content / prompt — only when query is not pure ID, or ID found nothing
+    # Pass 3: NAME search — UI title first, then tokenized first-user prompt.
+    # Do NOT rely on exact English-title substring inside transcript JSONL.
     if q and (not id_mode or not hits):
-        # Prefer rg over project roots
-        roots: list[Path] = []
         if "cursor" in hosts:
-            roots.append(HOME / ".cursor" / "projects")
-        if "codex" in hosts:
-            roots.extend([HOME / ".codex" / "sessions", HOME / ".codex" / "archived_sessions"])
-        if "claude" in hosts:
-            roots.append(HOME / ".claude" / "projects")
-        if "workbuddy" in hosts:
-            roots.append(HOME / ".workbuddy" / "projects")
-        if "kimi" in hosts:
-            roots.extend([HOME / ".kimi-code" / "sessions", HOME / ".kimi" / "sessions"])
+            titles = titles or load_cursor_titles()
 
-        if not all_projects:
-            # narrow roots to matching project dirs when possible
-            scoped_roots: list[Path] = []
-            slugs = workspace_slugs(cwd)
-            for host in hosts:
-                base = {
-                    "cursor": HOME / ".cursor" / "projects",
-                    "claude": HOME / ".claude" / "projects",
-                    "workbuddy": HOME / ".workbuddy" / "projects",
-                }.get(host)
-                if not base or not base.exists():
-                    continue
-                for slug in slugs:
-                    scoped_roots.extend([p for p in base.glob(f"*{slug}*") if p.is_dir()])
-            if scoped_roots:
-                roots = scoped_roots + [r for r in roots if r.name in {"sessions", "archived_sessions"}]
+        candidates: list[tuple[str, Path]] = []
+        for host, files in discovered.items():
+            for p in files:
+                candidates.append((host, p))
+        # Name search needs a wider window than recent listing
+        candidates.sort(
+            key=lambda hp: hp[1].stat().st_mtime if hp[1].exists() else 0,
+            reverse=True,
+        )
+        window = candidates if all_projects else candidates[: max(400, limit * 40)]
+        if all_projects:
+            window = candidates[: max(2000, limit * 80)]
 
-        if deep or not id_mode:
+        scored: list[tuple[float, Hit]] = []
+        for host, p in window:
+            if str(p) in seen_path:
+                continue
+            sid = session_id_of(host, p)
+            title = titles.get(sid, "") if host == "cursor" else ""
+            prompt = cache.get(host, p)
+            score = name_match_score(q, title=title, prompt=prompt)
+            if score <= 0:
+                continue
+            kind = "title" if title and name_match_score(q, title=title, prompt="") > 0 else "name"
+            h = to_hit(host, p, kind, cache, need_prompt=True, titles=titles)
+            scored.append((score, h))
+
+        scored.sort(key=lambda x: (x[0], x[1].mtime), reverse=True)
+        for score, h in scored:
+            add(h)
+            if len(hits) >= limit * 2:
+                break
+
+        # Optional deep content dump only when asked — exact phrase rg is a last resort
+        if deep and len(hits) < limit:
+            roots: list[Path] = []
+            if "cursor" in hosts:
+                roots.append(HOME / ".cursor" / "projects")
+            if "codex" in hosts:
+                roots.extend(
+                    [HOME / ".codex" / "sessions", HOME / ".codex" / "archived_sessions"]
+                )
+            if "claude" in hosts:
+                roots.append(HOME / ".claude" / "projects")
+            if "workbuddy" in hosts:
+                roots.append(HOME / ".workbuddy" / "projects")
+            if "kimi" in hosts:
+                roots.extend(
+                    [HOME / ".kimi-code" / "sessions", HOME / ".kimi" / "sessions"]
+                )
             for p in rg_search(roots, q, limit):
                 host = infer_host(p)
                 if host in hosts:
-                    add(to_hit(host, p, "rg", cache, need_prompt=True))
-
-        # Fallback: scan prompts of recent candidates (cached)
-        if len(hits) < limit:
-            candidates: list[tuple[str, Path]] = []
-            for host, files in discovered.items():
-                for p in files:
-                    candidates.append((host, p))
-            candidates.sort(key=lambda hp: hp[1].stat().st_mtime if hp[1].exists() else 0, reverse=True)
-            # only open a bounded window
-            window = candidates[: max(80, limit * 10)]
-            ql = q.lower()
-            for host, p in window:
-                if str(p) in seen_path:
-                    continue
-                prompt = cache.get(host, p)
-                if ql in prompt.lower() or ql in str(p).lower():
-                    add(to_hit(host, p, "prompt", cache, need_prompt=True))
-                if len(hits) >= limit * 2:
-                    break
+                    add(to_hit(host, p, "rg", cache, need_prompt=True, titles=titles))
 
     # Pass 4: no query → recent
     if not q:
+        if "cursor" in hosts:
+            titles = titles or load_cursor_titles()
         candidates = []
         for host, files in discovered.items():
             for p in files:
@@ -581,7 +764,7 @@ def find_threads(
                         continue
         candidates.sort(key=lambda x: x[2], reverse=True)
         for host, p, _ in candidates[:limit]:
-            add(to_hit(host, p, "recent", cache, need_prompt=True))
+            add(to_hit(host, p, "recent", cache, need_prompt=True, titles=titles))
 
     cache.save()
     hits.sort(key=lambda h: h.mtime, reverse=True)
@@ -621,9 +804,9 @@ def print_table(hits: list[Hit], stats: dict) -> None:
             file=sys.stderr,
         )
         return
-    # host  id8  age  time  project  prompt
     rows = []
     for h in hits:
+        label = h.title or h.prompt or ""
         rows.append(
             (
                 h.host[:7],
@@ -631,12 +814,13 @@ def print_table(hits: list[Hit], stats: dict) -> None:
                 h.age(),
                 _fmt_time(h.mtime),
                 h.project[:28],
-                (h.prompt or "")[:70],
+                label[:70],
                 h.path,
             )
         )
-    headers = ("HOST", "ID", "AGE", "WHEN", "PROJECT", "PROMPT", "PATH")
+    headers = ("HOST", "ID", "AGE", "WHEN", "PROJECT", "NAME/PROMPT", "PATH")
     widths = [max(len(headers[i]), max(len(r[i]) for r in rows)) for i in range(6)]
+
     def fmt_row(cols):
         return "  ".join(str(cols[i]).ljust(widths[i]) for i in range(6))
 

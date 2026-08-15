@@ -12,7 +12,7 @@ python3 scripts/verify-find-thread.py -v
 |  | 应命中（+） | 不应命中（−） |
 |--|------------|--------------|
 | **按会话 ID** | 真实 UUID / 短 UUID → 必须命中，且路径一致 | 伪造 UUID `deadbeef-…` → 必须 0 命中 |
-| **按名称** | 从该会话首条用户消息抽出的特征子串 → 必须命中该会话 | 无意义词 `zzznomatch-find-thread-…` → 必须 0 命中 |
+| **按名称** | 从该会话首条用户消息抽出的特征子串 → 必须命中该会话 | 无意义词 `zzznomatchqx9plumcake-…` → 必须 0 命中 |
 
 名称查询**不写死外机 ID**，而是从本机 fixture 的 prompt 现抽（例如「水火箭」「找到 thread」），换机器也能跑。
 
