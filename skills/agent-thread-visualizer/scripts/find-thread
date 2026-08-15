@@ -10,10 +10,10 @@ One-liner examples:
   find-thread --json -n 20 shader
 
 Name search (not ID):
-  1) Cursor UI titles from composer.composerHeaders when present
+  1) Cursor UI titles from composer.composerHeaders when present (highest priority)
   2) Else tokenized match on first user message (hyphen/space normalized)
-     so English UI titles can still hit Chinese/hyphenated prompts
-  3) Exact full-text rg only with --deep
+  3) Subagent paths filtered by default (--include-subagents to keep)
+  4) Exact full-text rg only with --deep
 
 Design for speed (not exhaustive recall):
   1) Prefer project-scoped dirs derived from cwd (ms-level)
@@ -59,6 +59,7 @@ class Hit:
     prompt: str
     match: str  # id | path | title | name | rg | prompt | recent
     title: str = ""
+    score: float = 0.0
 
     def age(self) -> str:
         return _fmt_age(self.mtime)
@@ -133,6 +134,17 @@ _WEAK_NAME_TOKENS = {
     "chat", "general", "help", "please", "new", "session",
 }
 
+# Cross-language / morphological soft matches for name tokens
+_TOKEN_SYNONYMS: dict[str, tuple[str, ...]] = {
+    "installation": ("install", "installed", "安装", "安裝"),
+    "install": ("installation", "installed", "安装", "安裝"),
+    "installed": ("install", "installation", "安装"),
+    "visualizer": ("visualization", "visualisation", "可视化", "可視化"),
+    "visualization": ("visualizer", "可视化"),
+    "skill": ("skills",),
+    "skills": ("skill",),
+}
+
 
 def normalize_name_text(text: str) -> str:
     text = (text or "").lower()
@@ -163,6 +175,15 @@ def name_tokens(query: str) -> list[str]:
     return out
 
 
+def _token_in_blob(token: str, blob: str) -> bool:
+    if token in blob:
+        return True
+    for syn in _TOKEN_SYNONYMS.get(token, ()):
+        if syn in blob:
+            return True
+    return False
+
+
 def name_match_score(query: str, title: str = "", prompt: str = "") -> float:
     """Score how well a UI title / first-user prompt matches a name query.
 
@@ -170,7 +191,7 @@ def name_match_score(query: str, title: str = "", prompt: str = "") -> float:
     first user message (possibly Chinese) and `composerHeaders.name` when present.
     Full-phrase substring search is the wrong mechanism — use token coverage on
     normalized title+prompt (so "Agent thread visualizer installation" can hit
-    a prompt containing `agent-thread-visualizer`).
+    a prompt containing `agent-thread-visualizer` + `安装`).
     """
     q = (query or "").strip()
     if not q:
@@ -191,14 +212,13 @@ def name_match_score(query: str, title: str = "", prompt: str = "") -> float:
     if not toks:
         return 1.0 if qn in blob else 0.0
 
-    matched = [t for t in toks if t in blob]
+    matched = [t for t in toks if _token_in_blob(t, blob)]
     if not matched:
         return 0.0
 
-    # Distinctive tokens (long / non-weak) gate false positives like
-    # "zzznomatch-find-thread-…" matching on bare "find"+"thread".
+    # Distinctive tokens gate false positives like bare find+thread.
     distinctive = [t for t in toks if len(t) >= 8 or (t not in _WEAK_NAME_TOKENS and len(t) >= 6)]
-    if distinctive and not any(t in blob for t in distinctive):
+    if distinctive and not any(_token_in_blob(t, blob) for t in distinctive):
         return 0.0
 
     strong = [t for t in matched if t not in _WEAK_NAME_TOKENS]
@@ -206,11 +226,17 @@ def name_match_score(query: str, title: str = "", prompt: str = "") -> float:
         return 0.0
 
     ratio = len(matched) / len(toks)
-    # Need decent coverage: >=2 tokens or >=60% of query tokens
     if len(matched) < 2 and ratio < 0.6:
         return 0.0
-    bonus = 0.15 if title_n and any(t in title_n for t in strong or matched) else 0.0
-    return min(1.0, ratio + bonus)
+
+    score = ratio
+    if title_n and any(_token_in_blob(t, title_n) for t in strong or matched):
+        score += 0.15
+    # Prefer short user asks over huge subagent task dumps that merely mention the skill
+    if prompt and len(prompt) > 350 and not title_n:
+        score *= 0.55
+    # Prefer parent chats over subagent transcripts
+    return min(1.0, score)
 
 
 def load_cursor_titles() -> dict[str, str]:
@@ -568,6 +594,7 @@ def to_hit(
     cache: SnippetCache,
     need_prompt: bool,
     titles: Optional[dict[str, str]] = None,
+    score: float = 0.0,
 ) -> Hit:
     try:
         mtime = path.stat().st_mtime
@@ -587,7 +614,18 @@ def to_hit(
         prompt=prompt,
         match=match,
         title=title,
+        score=score,
     )
+
+
+def is_subagent_path(path: Path) -> bool:
+    """Cursor subagent jsonl or non-main kimi worker agents."""
+    s = str(path).replace("\\", "/")
+    if "/subagents/" in s:
+        return True
+    if "/agents/agent-" in s:  # keep .../agents/main/
+        return True
+    return False
 
 
 def rg_search(roots: list[Path], query: str, limit: int) -> list[Path]:
@@ -630,6 +668,7 @@ def find_threads(
     limit: int,
     all_projects: bool,
     deep: bool,
+    include_subagents: bool = False,
 ) -> list[Hit]:
     cache = SnippetCache()
     t0 = time.perf_counter()
@@ -651,13 +690,16 @@ def find_threads(
             seen_sid.add(sid_key)
         hits.append(h)
 
+    def allow_for_name(p: Path) -> bool:
+        return include_subagents or not is_subagent_path(p)
+
     q = (query or "").strip()
     id_mode = bool(q) and looks_like_id(q)
-    titles = load_cursor_titles() if (not id_mode or not q) and "cursor" in hosts else {}
-    if q and not id_mode and "cursor" in hosts and not titles:
+    titles: dict[str, str] = {}
+    if "cursor" in hosts and (not id_mode or not q):
         titles = load_cursor_titles()
 
-    # Pass 1: ID / path match (no content) — always cheapest
+    # Pass 1: ID / path — allow subagents (explicit ID)
     if q:
         for host, files in discovered.items():
             for p in files:
@@ -670,19 +712,29 @@ def find_threads(
                             cache,
                             need_prompt=True,
                             titles=titles,
+                            score=1.0,
                         )
                     )
 
-    # Pass 2: if ID mode and scoped miss, broaden once
+    # Pass 2: ID scoped miss → broaden
     if id_mode and not hits and not all_projects:
         discovered = discover(hosts, cwd, all_projects=True)
         for host, files in discovered.items():
             for p in files:
                 if path_id_match(p, q):
-                    add(to_hit(host, p, "id", cache, need_prompt=True, titles=titles))
+                    add(
+                        to_hit(
+                            host,
+                            p,
+                            "id",
+                            cache,
+                            need_prompt=True,
+                            titles=titles,
+                            score=1.0,
+                        )
+                    )
 
-    # Pass 3: NAME search — UI title first, then tokenized first-user prompt.
-    # Do NOT rely on exact English-title substring inside transcript JSONL.
+    # Pass 3: NAME — title (composerHeaders) outranks prompt semantic match
     if q and (not id_mode or not hits):
         if "cursor" in hosts:
             titles = titles or load_cursor_titles()
@@ -690,37 +742,58 @@ def find_threads(
         candidates: list[tuple[str, Path]] = []
         for host, files in discovered.items():
             for p in files:
-                candidates.append((host, p))
-        # Name search needs a wider window than recent listing
+                if allow_for_name(p):
+                    candidates.append((host, p))
         candidates.sort(
             key=lambda hp: hp[1].stat().st_mtime if hp[1].exists() else 0,
             reverse=True,
         )
-        window = candidates if all_projects else candidates[: max(400, limit * 40)]
-        if all_projects:
-            window = candidates[: max(2000, limit * 80)]
+        window = (
+            candidates[: max(2000, limit * 80)]
+            if all_projects
+            else candidates[: max(400, limit * 40)]
+        )
 
-        scored: list[tuple[float, Hit]] = []
+        scored: list[tuple[int, float, Hit]] = []  # title_tier, score, hit
         for host, p in window:
             if str(p) in seen_path:
                 continue
             sid = session_id_of(host, p)
             title = titles.get(sid, "") if host == "cursor" else ""
             prompt = cache.get(host, p)
-            score = name_match_score(q, title=title, prompt=prompt)
-            if score <= 0:
-                continue
-            kind = "title" if title and name_match_score(q, title=title, prompt="") > 0 else "name"
-            h = to_hit(host, p, kind, cache, need_prompt=True, titles=titles)
-            scored.append((score, h))
 
-        scored.sort(key=lambda x: (x[0], x[1].mtime), reverse=True)
-        for score, h in scored:
+            title_score = name_match_score(q, title=title, prompt="") if title else 0.0
+            prompt_score = name_match_score(q, title="", prompt=prompt) if prompt else 0.0
+
+            if title_score > 0:
+                h = to_hit(
+                    host,
+                    p,
+                    "title",
+                    cache,
+                    need_prompt=True,
+                    titles=titles,
+                    score=title_score,
+                )
+                scored.append((1, title_score, h))
+            elif prompt_score > 0:
+                h = to_hit(
+                    host,
+                    p,
+                    "name",
+                    cache,
+                    need_prompt=True,
+                    titles=titles,
+                    score=prompt_score,
+                )
+                scored.append((0, prompt_score, h))
+
+        scored.sort(key=lambda x: (x[0], x[1], x[2].mtime), reverse=True)
+        for _tier, _score, h in scored:
             add(h)
             if len(hits) >= limit * 2:
                 break
 
-        # Optional deep content dump only when asked — exact phrase rg is a last resort
         if deep and len(hits) < limit:
             roots: list[Path] = []
             if "cursor" in hosts:
@@ -738,37 +811,68 @@ def find_threads(
                     [HOME / ".kimi-code" / "sessions", HOME / ".kimi" / "sessions"]
                 )
             for p in rg_search(roots, q, limit):
+                if not allow_for_name(p):
+                    continue
                 host = infer_host(p)
                 if host in hosts:
-                    add(to_hit(host, p, "rg", cache, need_prompt=True, titles=titles))
+                    add(
+                        to_hit(
+                            host,
+                            p,
+                            "rg",
+                            cache,
+                            need_prompt=True,
+                            titles=titles,
+                            score=0.2,
+                        )
+                    )
 
-    # Pass 4: no query → recent
+    # Pass 4: recent parents only
     if not q:
         if "cursor" in hosts:
             titles = titles or load_cursor_titles()
         candidates = []
         for host, files in discovered.items():
             for p in files:
+                if not allow_for_name(p):
+                    continue
                 try:
                     candidates.append((host, p, p.stat().st_mtime))
                 except OSError:
                     continue
-        # If scoped empty, fall back to global recent lightly
         if not candidates and not all_projects:
             discovered = discover(hosts, cwd, all_projects=True)
             for host, files in discovered.items():
                 for p in files:
+                    if not allow_for_name(p):
+                        continue
                     try:
                         candidates.append((host, p, p.stat().st_mtime))
                     except OSError:
                         continue
         candidates.sort(key=lambda x: x[2], reverse=True)
         for host, p, _ in candidates[:limit]:
-            add(to_hit(host, p, "recent", cache, need_prompt=True, titles=titles))
+            add(
+                to_hit(
+                    host, p, "recent", cache, need_prompt=True, titles=titles, score=0.0
+                )
+            )
 
     cache.save()
-    hits.sort(key=lambda h: h.mtime, reverse=True)
-    # stash timing on module for optional stderr
+
+    def sort_key(h: Hit):
+        # id > title > prompt-name > other; then score; then recency
+        if h.match in {"id", "path"}:
+            tier = 3
+        elif h.match == "title":
+            tier = 2
+        elif h.match == "name":
+            tier = 1
+        else:
+            tier = 0
+        return (tier, h.score, h.mtime)
+
+    hits.sort(key=sort_key, reverse=True)
     find_threads.last_stats = {  # type: ignore[attr-defined]
         "discover_ms": round(discover_ms, 1),
         "files": sum(len(v) for v in discovered.values()),
@@ -847,6 +951,11 @@ def main(argv: Optional[list[str]] = None) -> int:
     ap.add_argument("-n", "--limit", type=int, default=15, help="Max results (default 15)")
     ap.add_argument("--all", action="store_true", help="Do not scope to current workspace")
     ap.add_argument("--deep", action="store_true", help="Force ripgrep content search even for ID-like queries")
+    ap.add_argument(
+        "--include-subagents",
+        action="store_true",
+        help="Include Cursor /subagents/ and kimi worker agent paths in name/recent results",
+    )
     ap.add_argument("--json", action="store_true", help="JSON output")
     ap.add_argument("-C", "--cwd", default=None, help="Workspace path (default: $PWD)")
     ap.add_argument("--clear-cache", action="store_true", help="Drop snippet cache and exit")
@@ -870,6 +979,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         limit=args.limit,
         all_projects=args.all,
         deep=args.deep,
+        include_subagents=args.include_subagents,
     )
     stats = getattr(find_threads, "last_stats", {})
 
