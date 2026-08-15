@@ -27,7 +27,7 @@ npx skills add /Users/liuxu/repo/local/fenfenxu-skills --list
 
 | Skill | 说明 |
 |-------|------|
-| [`agent-thread-visualizer`](skills/agent-thread-visualizer) | 收集、归一化并可视化一个或多个 AI agent thread，输出易读的执行地图 |
+| [`agent-thread-visualizer`](skills/agent-thread-visualizer) | 按宿主定位会话 ID/名称，完整收集 skills/工具/子 Agent，输出主次分层、可展开的执行地图 |
 
 ## 仓库结构
 

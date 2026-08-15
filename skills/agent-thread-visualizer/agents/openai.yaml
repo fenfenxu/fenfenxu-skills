@@ -1,4 +1,4 @@
 interface:
   display_name: "Agent Thread Visualizer"
-  short_description: "把 AI agent thread 的执行过程整理成易读的时间线和分支图"
-  default_prompt: "请收集这个 thread 中重要的任务、分支、子 Agent、尝试、失败和环境信息，再生成一张人容易读懂的执行地图。"
+  short_description: "按宿主定位会话，整理 skills/工具/子 Agent，输出可展开的执行地图"
+  default_prompt: "请在当前 AI 工具内按我给的会话 ID 或名称定位 thread，尽量完整收集阶段、skills、工具调用、子 Agent（含类型/名称）、失败与环境信息，再生成主次分层、细节可展开的执行地图；若有证据，文末可附简短会话健康建议。"
