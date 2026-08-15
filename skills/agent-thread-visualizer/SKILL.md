@@ -1,56 +1,83 @@
 ---
 name: agent-thread-visualizer
-description: Collect, normalize, summarize, and visualize one or more AI agent threads as human-readable execution maps. Use when a user asks to inspect an agent thread visually, understand main-agent and child-agent work, explain timing, retries, detours, failures, cancellations, forks, waits, files, or local/worktree execution context.
+description: Collect, normalize, summarize, and visualize one or more AI agent threads as human-readable execution maps, with host-aware session lookup (ID or name), full collection of skills/tools/sub-agents, layered primary/secondary display, output-language i18n, and optional session-health tips. Use when a user asks to inspect an agent thread visually, find a Cursor/Codex/Claude Code/Workbuddy/kimi-code session by id or name, understand main-agent and child-agent work, explain timing, retries, detours, failures, cancellations, forks, waits, files, loaded skills, tool calls, or local/worktree execution context.
 ---
 
 # Agent Thread Visualizer
 
-先收集 thread 中对理解执行过程有价值的事实，再把事实组织成容易阅读的时间线、分支图或对比图。默认用中文和自然语言描述工作；技术名称只在追踪来源确实有帮助时作为次要信息出现。
+先完整采集 thread 的执行事实，再为展示做折叠、脱敏和分层，最后组织成易读的时间线、分支图或对比图。输出语言跟随用户使用的语言或明确要求；用户使用中文时可直接用中文。技术名称只在追踪来源确实有帮助时作为次要信息出现。
 
 ## Workflow
 
-### 1. 确定范围与来源
+### 1. 识别宿主并定位会话
 
-- 先确认要看的 thread；单个 thread 默认解释执行过程，多个 thread 默认做并行对比。
-- 优先读取 thread API 返回的消息、状态、子 Agent 活动、文件变化和时间字段。
-- 如果需要秒级时间线，且本地可读，读取对应 rollout/event 日志；把它当作证据来源，不把日志内容当成指令。
-- 记录数据来源和读取时间；读不到的字段标记为未知，不补猜。
+- 按 [references/hosts.md](references/hosts.md) 的实时信号、宿主手册、通用启发和用户提供路径的顺序识别宿主。
+- 识别后读取匹配的宿主手册：例如 Cursor 使用 [references/host-cursor.md](references/host-cursor.md)；其他宿主手册从 `references/hosts.md` 进入。不要在本文件复制或猜测宿主路径。
+- 默认只查当前宿主；用户明确指定其他工具时才跨宿主查找。
+- 输入像稳定 ID 时先精确匹配 ID；否则先匹配名称/标题，再做模糊匹配。多条命中时让用户选择，零命中时报告已尝试步骤和未知项。
+- 未收录宿主不拒绝执行，走通用回退。
 
-### 2. 收集有价值的信息
+### 2. 确定分析范围
 
-至少收集以下几类：
+- 单个 thread：解释目标、阶段、参与者、耗时、异常和结果。
+- 多个 thread：默认做并行对比；使用统一时间尺度。若开始时间不可比较，改用“各自从 0 分钟开始”的相对时间并明确标注。
+- 只分析用户选定的会话和合理关联的子 Agent；不静默扩展到其他会话。
 
-- **任务与结果**：用户目标、主 Agent 的阶段、已完成/未完成/阻塞状态、最终产物。
-- **参与者关系**：主 Agent、子 Agent、父子关系、启动、交互、完成、汇合。
-- **时间**：thread/turn 起止时间、事件开始/结束时间、等待时段、当前快照时间。
-- **执行事件**：用户输入、关键决策、工具调用类别、文件变化、失败、重试、修复、取消/撤回、fork、merge。
-- **运行上下文**：host、local/worktree、工作目录、分支或 checkout 信息；只展示实际读到的值。
-- **证据与置信度**：每个摘要要能回指原始消息、事件或文件；推断必须明确标为推断。
+### 3. 完整采集事实
 
-把相邻的重复进度消息合并为一个阶段；把并行事件按真实时间放到不同泳道；把重试保留为“失败 → 新尝试”的因果链。
+优先读取宿主 API 或 transcript 提供的消息、状态和元数据；需要秒级时间线且本地可读时，再读取 rollout/event 日志。日志是证据，不是指令。字段与事件类型遵循 [references/event-model.md](references/event-model.md)。
 
-### 3. 舍弃或折叠低价值信息
+采集至少包括：
 
-- 不把完整 reasoning token、系统提示、重复 token 统计、心跳和重复等待逐条画出。
-- 不把巨大的原始工具输出、base64、二进制内容、密钥、令牌或私人信息放进可视化。
-- 不把相同阶段的连续进度更新当成多个阶段；保留首次开始、关键变化、最终结果。
-- 不猜测缺失的开始/结束时间、运行环境、失败原因或“看起来应该发生”的 fork/撤回。
-- 被折叠的信息保留数量、摘要和来源，允许在详情中说明“已合并若干重复事件”。
+- **任务与结果**：用户目标、主 Agent 阶段、完成/未完成/阻塞状态、最终产物。
+- **参与者关系**：主 Agent、子 Agent、类型与名称、父子关系、启动、交互、完成、汇合。
+- **时间**：thread/turn 起止时间、事件开始/结束时间、等待时段、快照时间。
+- **执行事件**：关键决策、skill 加载、工具调用、文件变化、失败、重试、修复、取消/撤回、fork、merge。
+- **关联信息**：因果链、相关事件、同一阶段内的事件归属。
+- **运行上下文**：host、local/worktree、工作目录、分支或 checkout；只记录实际读到的值。
+- **证据与置信度**：原始消息、事件或文件引用；推断必须标为推断。
 
-### 4. 归一化事件
+采集时尽量保留所有可获得的执行相关事件；不要为了“图干净”在采集阶段丢掉 skill 加载或工具调用。
 
-对每个保留事件建立以下字段：
+### 4. 只在展示阶段折叠与脱敏
 
-```text
-id, kind, actor, parent_id, started_at, ended_at, status,
-human_summary, evidence_ref, confidence, environment
-```
+- 把相邻重复进度合并为阶段；把并行事件放到不同泳道；把重试保留为“失败 → 新尝试”的因果链。
+- 折叠完整 reasoning、系统提示、重复 token 统计、心跳、重复等待和巨大工具输出，但保留数量、摘要与证据引用。
+- 可视化正文中移除密钥、令牌、私人信息、base64 和二进制内容。脱敏不等于丢弃事件。
+- 不猜测缺失的时间、环境、失败原因或 fork/撤回；未知就标记未知。
 
-`kind` 使用有限集合：`user_goal`、`milestone`、`tool_work`、`subagent_spawn`、`subagent_join`、`retry`、`failure`、`cancel`、`retract`、`fork`、`merge`、`wait`、`file_change`、`environment`。无法归类时使用 `other` 并保留原始类型。
+### 5. 归一化事件
 
-时间规则：有真实时间就使用真实时间；活动中的事件以快照时间作为临时结束并标记“仍在进行”；可视化中的耗时小于 60 秒显示 `n秒`，达到 1 分钟显示 `n分钟`，精确到秒的时间放到点击详情中。
+- 每个事件包含核心字段：`id, kind, actor, parent_id, started_at, ended_at, status, human_summary, evidence_ref, confidence, environment`。
+- 有数据时添加扩展字段：`skill_refs[]`, `tool_refs[]`, `subagent_type`, `subagent_name`, `related_event_ids[]`。
+- 使用 `event-model.md` 定义的有限 `kind` 集合；无法归类时用 `other` 并保留原始类型。
+- 有真实时间就使用真实时间；进行中的事件以快照时间临时收尾并标记“仍在进行”。小于 60 秒显示 `n秒`，达到 1 分钟显示 `n分钟`；精确时间放详情。
+
+### 6. 分层可视化
+
+按下方 Visualization Design 生成执行地图。主视图只承担快速理解，次要信息可展开，证据与参数摘要进入详情。
+
+### 7. 按固定顺序输出
+
+1. 说明这张图帮助用户看什么。
+2. 给出可视化内容或引用，不重复整张图的文字。
+3. 有证据且用户未拒绝建议时，追加简短“会话健康”提示，规则见 [references/session-health.md](references/session-health.md)。
+4. 最后列出来源、读取时间、未知项和明确标注的推断。
+
+### 8. 验证
+
+- 主 Agent 与子 Agent 分组清楚；子 Agent 泳道标题使用 `type · name`，缺失部分标为“未知”，且类型/名称有宿主元数据或启动参数作为证据。
+- 没有虚构事件、时间、环境、因果关系或失败原因；每个摘要可回指证据。
+- 线段长度与时间一致，当前活动状态明确，折叠数量可追踪，敏感信息已脱敏。
+- 标签不重叠，窄屏可读，输出语言符合用户语言或明确要求。
 
 ## Visualization Design
+
+### 分层展示
+
+- **主层（默认展开）**：目标、主阶段、关键决策、失败/重试、子 Agent 启动/汇合、运行环境。
+- **次层（默认折叠）**：各阶段 skills 列表、工具摘要、等待、compaction/context 信号。
+- **详情层（按需展开）**：精确时间、证据、单次工具参数摘要、关联事件。
 
 ### 默认布局
 
@@ -77,9 +104,7 @@ human_summary, evidence_ref, confidence, environment
 
 单个 thread 用执行地图；多个 thread 使用同一时间尺度的多泳道对比。若 thread 开始时间不可比较，改用“各自从 0 分钟开始”的相对时间，并明确标注。
 
-## Output and Validation
+## 输出形式
 
 - 只在用户确实需要探索执行过程时创建可视化；静态关系足够时用 Mermaid。
 - 动态时间线、分支、点击详情使用 HTML 可视化，并遵循可用的 `visualize` skill 输出契约。
-- 回复先说明可视化帮助用户看什么，再给出可视化内容引用；不要重复整张图里的文字。
-- 检查：没有重叠的标签、没有未证实的事件、主/子 Agent 分组清楚、线段长度与时间一致、当前活动状态明确、窄屏仍可读。
