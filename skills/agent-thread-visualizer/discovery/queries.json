@@ -1,0 +1,256 @@
+{
+  "target": {
+    "owner": "fenfenxu",
+    "repo": "fenfenxu-skills",
+    "skill": "agent-thread-visualizer"
+  },
+  "pass": "result id contains fenfenxu and agent-thread-visualizer",
+  "cases": [
+    {
+      "lang": "zh",
+      "query": "agent 会话可视化",
+      "intent": "primary Chinese",
+      "priority": "p0"
+    },
+    {
+      "lang": "zh",
+      "query": "会话可视化",
+      "intent": "short Chinese",
+      "priority": "p0"
+    },
+    {
+      "lang": "zh",
+      "query": "agent 时间线",
+      "intent": "timeline",
+      "priority": "p1"
+    },
+    {
+      "lang": "zh",
+      "query": "子agent 可视化",
+      "intent": "subagent",
+      "priority": "p1"
+    },
+    {
+      "lang": "zh",
+      "query": "会话报告",
+      "intent": "session report",
+      "priority": "p1"
+    },
+    {
+      "lang": "zh",
+      "query": "会话分析",
+      "intent": "session analyzer",
+      "priority": "p1"
+    },
+    {
+      "lang": "zh",
+      "query": "调试 agent 会话",
+      "intent": "debug",
+      "priority": "p1"
+    },
+    {
+      "lang": "zh",
+      "query": "看看 agent 做了什么",
+      "intent": "colloquial",
+      "priority": "p1"
+    },
+    {
+      "lang": "zh",
+      "query": "执行地图",
+      "intent": "execution map",
+      "priority": "p0"
+    },
+    {
+      "lang": "zh",
+      "query": "agent 执行流程",
+      "intent": "execution flow",
+      "priority": "p1"
+    },
+    {
+      "lang": "zh",
+      "query": "Cursor 会话",
+      "intent": "host Cursor",
+      "priority": "p1"
+    },
+    {
+      "lang": "zh",
+      "query": "Claude Code 会话",
+      "intent": "host Claude",
+      "priority": "p1"
+    },
+    {
+      "lang": "zh",
+      "query": "Workbuddy 会话",
+      "intent": "host Workbuddy",
+      "priority": "p1"
+    },
+    {
+      "lang": "zh",
+      "query": "kimi-code 会话",
+      "intent": "host kimi",
+      "priority": "p1"
+    },
+    {
+      "lang": "en",
+      "query": "agent thread visualizer",
+      "intent": "skill name phrase",
+      "priority": "p0"
+    },
+    {
+      "lang": "en",
+      "query": "agent-thread-visualizer",
+      "intent": "exact skill id",
+      "priority": "p0"
+    },
+    {
+      "lang": "en",
+      "query": "agent session timeline",
+      "intent": "timeline",
+      "priority": "p1"
+    },
+    {
+      "lang": "en",
+      "query": "session report",
+      "intent": "session report",
+      "priority": "p1"
+    },
+    {
+      "lang": "en",
+      "query": "session log analyzer",
+      "intent": "log analyzer",
+      "priority": "p1"
+    },
+    {
+      "lang": "en",
+      "query": "agent flow visualization",
+      "intent": "agent flow",
+      "priority": "p1"
+    },
+    {
+      "lang": "en",
+      "query": "execution map",
+      "intent": "execution map",
+      "priority": "p1"
+    },
+    {
+      "lang": "en",
+      "query": "conversation visualizer",
+      "intent": "conversation viz",
+      "priority": "p1"
+    },
+    {
+      "lang": "en",
+      "query": "subagent timeline",
+      "intent": "subagent",
+      "priority": "p1"
+    },
+    {
+      "lang": "en",
+      "query": "debug agent session",
+      "intent": "debug",
+      "priority": "p1"
+    },
+    {
+      "lang": "en",
+      "query": "Cursor session",
+      "intent": "host Cursor",
+      "priority": "p1"
+    },
+    {
+      "lang": "en",
+      "query": "Workbuddy session",
+      "intent": "host Workbuddy",
+      "priority": "p1"
+    },
+    {
+      "lang": "en",
+      "query": "kimi-code session",
+      "intent": "host kimi",
+      "priority": "p1"
+    },
+    {
+      "lang": "en",
+      "query": "visualize the run",
+      "intent": "colloquial",
+      "priority": "p1"
+    },
+    {
+      "lang": "ja",
+      "query": "エージェント セッション 可視化",
+      "intent": "session visualization",
+      "priority": "p0"
+    },
+    {
+      "lang": "ja",
+      "query": "セッション可視化",
+      "intent": "short",
+      "priority": "p0"
+    },
+    {
+      "lang": "ja",
+      "query": "エージェント タイムライン",
+      "intent": "timeline",
+      "priority": "p1"
+    },
+    {
+      "lang": "ja",
+      "query": "サブエージェント 可視化",
+      "intent": "subagent",
+      "priority": "p1"
+    },
+    {
+      "lang": "ja",
+      "query": "セッションレポート",
+      "intent": "session report",
+      "priority": "p1"
+    },
+    {
+      "lang": "ja",
+      "query": "セッション分析",
+      "intent": "session analysis",
+      "priority": "p1"
+    },
+    {
+      "lang": "ja",
+      "query": "エージェントの実行を可視化",
+      "intent": "visualize execution",
+      "priority": "p1"
+    },
+    {
+      "lang": "ja",
+      "query": "実行マップ",
+      "intent": "execution map",
+      "priority": "p1"
+    },
+    {
+      "lang": "ja",
+      "query": "エージェント 実行フロー",
+      "intent": "execution flow",
+      "priority": "p1"
+    },
+    {
+      "lang": "ja",
+      "query": "Cursor セッション",
+      "intent": "host Cursor",
+      "priority": "p1"
+    },
+    {
+      "lang": "ja",
+      "query": "Claude Code セッション",
+      "intent": "host Claude",
+      "priority": "p1"
+    },
+    {
+      "lang": "ja",
+      "query": "Workbuddy セッション",
+      "intent": "host Workbuddy",
+      "priority": "p1"
+    },
+    {
+      "lang": "ja",
+      "query": "kimi-code セッション",
+      "intent": "host kimi",
+      "priority": "p1"
+    }
+  ]
+}

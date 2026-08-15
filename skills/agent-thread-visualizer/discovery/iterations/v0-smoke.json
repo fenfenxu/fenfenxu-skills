@@ -1,0 +1,177 @@
+{
+  "generated_at": "2026-08-15T05:18:28.403689+00:00",
+  "label": "smoke",
+  "target": {
+    "owner": "fenfenxu",
+    "repo": "fenfenxu-skills",
+    "skill": "agent-thread-visualizer"
+  },
+  "modes": [
+    "api",
+    "cli",
+    "cli-owner"
+  ],
+  "api_limit": 40,
+  "description_chars": 731,
+  "summary": {
+    "by_channel": {
+      "api": {
+        "hits": 1,
+        "misses": 2,
+        "errors": 0,
+        "hit_rate": 0.333,
+        "p0_hit_rate": 0.333,
+        "p0_hits": 1,
+        "p0_total": 3
+      },
+      "cli": {
+        "hits": 0,
+        "misses": 3,
+        "errors": 0,
+        "hit_rate": 0.0,
+        "p0_hit_rate": 0.0,
+        "p0_hits": 0,
+        "p0_total": 3
+      },
+      "cli-owner": {
+        "hits": 3,
+        "misses": 0,
+        "errors": 0,
+        "hit_rate": 1.0,
+        "p0_hit_rate": 1.0,
+        "p0_hits": 3,
+        "p0_total": 3
+      }
+    },
+    "by_lang": {
+      "zh:cli_miss": 1,
+      "en:cli_miss": 1,
+      "ja:cli_miss": 1
+    },
+    "p0": {}
+  },
+  "results": [
+    {
+      "lang": "zh",
+      "priority": "p0",
+      "intent": "primary Chinese",
+      "query": "agent 会话可视化",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "libtv-labs/libtv-skills/libtv-skill",
+            "pippit-dev/pippit-skills/xyq-nest-skill",
+            "alchaincyf/mrbeast-skill/mrbeast-perspective"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 4,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "oil-oil/codex@codex",
+            "karasukaigan/skills-zh@qa"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 3,
+          "n": 3,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "en",
+      "priority": "p0",
+      "intent": "skill name phrase",
+      "query": "agent thread visualizer",
+      "channels": {
+        "api": {
+          "hit": true,
+          "rank": 13,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "kostja94/marketing-skills/twitter-x-posts",
+            "lovartai/lovart-skill/lovart-api",
+            "composio-community/awesome-codex-skills/agent-deep-links"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "lovartai/lovart-skill@lovart-api",
+            "basicmachines-co/basic-memory@memory-capture"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 3,
+          "n": 3,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "ja",
+      "priority": "p0",
+      "intent": "short",
+      "query": "セッション可視化",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "fuzzy",
+          "top": [
+            "interfacex-co-jp/genshijin/genshijin-help",
+            "vivy-yi/xiaohongshu-skills/data-visualization",
+            "riba2534/feishu-cli/feishu-cli-visual"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 6,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "interfacex-co-jp/genshijin@genshijin-help",
+            "shunsukehayashi/miyabi-claude-plugins@tmux"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 2,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    }
+  ]
+}

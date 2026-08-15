@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skill Discovery Optimizer"
+  short_description: "Skills SEO/GEO loop: multilingual find-skills tests, optimize description, publish, re-validate."
+  default_prompt: "Run skill-discovery-optimizer on the target skill: generate or load discovery queries (zh/en/ja as needed), baseline with both skills.sh API and npx skills find, optimize description from misses, record an iteration version, publish if I ask, then re-validate and loop until goals are met."

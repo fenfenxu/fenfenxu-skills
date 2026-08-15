@@ -36,6 +36,7 @@ npx skills add /Users/liuxu/repo/local/fenfenxu-skills --list
 | Skill | What it does | Find with |
 |-------|----------------|-----------|
 | [`agent-thread-visualizer`](skills/agent-thread-visualizer) | Host-aware session lookup (ID/name) for Cursor / Codex / Claude Code / Workbuddy / kimi-code; full collect of skills/tools/sub-agents; layered swimlane **execution map** / **agent session timeline** | EN: `agent thread visualizer`, `session timeline`, `session report`, `agent flow`, `execution map`; ZH: `agent 会话可视化`, `会话可视化`, `执行地图`, `会话报告`; JA: `セッション可視化`, `実行マップ`, `エージェント タイムライン` |
+| [`skill-discovery-optimizer`](skills/skill-discovery-optimizer) | Skills SEO / GEO loop: generate multilingual find-skills tests, dual eval (API + `npx skills find`), optimize description, version, publish, re-validate | `skill SEO`, `skill GEO`, `find-skills`, `skills.sh discoverability`, `技能检索优化` |
 
 ### agent-thread-visualizer
 
@@ -46,6 +47,16 @@ Turns opaque agent runs into readable execution maps:
 - **Show**: primary/secondary layered swimlanes; expandable detail; optional session-health tips
 
 Useful when you need a session report, session log walkthrough, agent flow visualization, or transcript inspection — not just a token/context dump.
+
+### skill-discovery-optimizer
+
+Skills SEO / GEO closed loop for find-skills:
+
+1. Generate multilingual queries → 2. Dual eval (API + `npx skills find`) → 3. Optimize description → 4. Version → 5. Publish + telemetry → 6. Re-validate → loop
+
+```bash
+npx skills add fenfenxu/fenfenxu-skills --skill skill-discovery-optimizer
+```
 
 ## Repo layout
 

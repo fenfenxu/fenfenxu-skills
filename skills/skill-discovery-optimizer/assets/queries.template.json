@@ -1,0 +1,16 @@
+{
+  "target": {
+    "owner": "OWNER",
+    "repo": "REPO",
+    "skill": "skill-name"
+  },
+  "pass": "result id contains OWNER and skill-name",
+  "cases": [
+    { "lang": "en", "priority": "p0", "query": "skill name phrase", "intent": "primary English" },
+    { "lang": "en", "priority": "p0", "query": "skill-name", "intent": "exact id" },
+    { "lang": "zh", "priority": "p0", "query": "中文核心检索词", "intent": "primary Chinese" },
+    { "lang": "ja", "priority": "p1", "query": "日本語の検索語", "intent": "primary Japanese" },
+    { "lang": "en", "priority": "p1", "query": "synonym or host session", "intent": "synonym" },
+    { "lang": "en", "priority": "p2", "query": "colloquial phrase", "intent": "colloquial" }
+  ]
+}
