@@ -1,4 +1,4 @@
 interface:
   display_name: "Agent Thread Visualizer"
-  short_description: "Locate Cursor/Codex/Claude Code/Workbuddy/kimi-code sessions by ID or name; collect skills/tools/sub-agents; render swimlane execution maps and session timelines."
+  short_description: "Cursor/Codex/Claude/Workbuddy/kimi-code session maps — EN execution timeline; ZH 会话可视化; JA セッション可視化."
   default_prompt: "Locate the agent thread by the session ID or name I give (current host first: Cursor, Codex, Claude Code, Workbuddy, or kimi-code). Collect stages, skills, tool calls, sub-agents (type/name), failures, and environment, then produce a layered, expandable execution map. If evidence supports it, end with brief session-health tips."

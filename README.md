@@ -35,7 +35,7 @@ npx skills add /Users/liuxu/repo/local/fenfenxu-skills --list
 
 | Skill | What it does | Find with |
 |-------|----------------|-----------|
-| [`agent-thread-visualizer`](skills/agent-thread-visualizer) | Host-aware session lookup (ID/name) for Cursor / Codex / Claude Code / Workbuddy / kimi-code; full collect of skills/tools/sub-agents; layered swimlane **execution map** / **agent session timeline** | `agent thread visualizer`, `session timeline`, `session report`, `agent flow`, `execution map`, `subagent timeline`, `conversation visualizer`, `debug agent session`, `Workbuddy session`, `kimi-code session` |
+| [`agent-thread-visualizer`](skills/agent-thread-visualizer) | Host-aware session lookup (ID/name) for Cursor / Codex / Claude Code / Workbuddy / kimi-code; full collect of skills/tools/sub-agents; layered swimlane **execution map** / **agent session timeline** | EN: `agent thread visualizer`, `session timeline`, `session report`, `agent flow`, `execution map`; ZH: `agent 会话可视化`, `会话可视化`, `执行地图`, `会话报告`; JA: `セッション可視化`, `実行マップ`, `エージェント タイムライン` |
 
 ### agent-thread-visualizer
 
