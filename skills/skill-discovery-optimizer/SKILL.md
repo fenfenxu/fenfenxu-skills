@@ -169,18 +169,21 @@ python3 scripts/run_discovery_eval.py \
 npx skills add <owner>/<repo> --skill <skill-name> -g -y
 ```
 
-skills.sh **不靠 GitHub crawl 实时同步**；安装遥测会更新 installs，但 **SKILL.md 正文/description 可能滞后**。发布后务必打开 `https://skills.sh/<owner>/<repo>/<skill>`，核对页面是否已是新文案。若仍显示旧正文：
+skills.sh **不靠 GitHub crawl 实时同步**。`npx skills add` 往往会刷新 **installs**，但 **listing 上的 description / SKILL.md 正文何时 reindex 未知**（见 [references/publish.md](references/publish.md)「Known unknown」）。发布后必须打开 `https://www.skills.sh/<owner>/<repo>/<skill>` 核对文案，不能只看安装数。
 
-- 不要继续堆 description 指望立刻涨分
-- 在 CHANGELOG 记 `index lag`
-- 过一段时间或更多 installs 后再复测；达标判定可暂以 `cli-owner` + GitHub 源文案为准
+若仍显示旧正文（`index lag`）：
+
+- **暂停** description SEO 迭代（无法验证假设）
+- CHANGELOG 记 installs 变化 + 页面仍旧 + `blocked: content reindex unknown`
+- 达标暂以 `cli-owner` + GitHub 源文案 + `--owner` 文档为准
+- 只能等页面追上后再复测；期间不要继续堆词
 
 ### 7–8. Re-validate & loop
 
 - 同一 `queries.json` 复跑；对比 vN vs vN-1。
 - 有提升 → 记 changelog → 若未达标继续 3–6。
 - 无提升 → 换假设（别只堆词）：竞品差异化短语、缩短 description、加安装、接受 `--owner` 为 P0 达标定义。
-- 连续两轮无提升或达目标 → 出最终报告并停止。
+- 连续两轮无提升、达目标、或 **listing 内容长期 stale（reindex 未知）** → 出最终报告并停止 / 暂停。
 
 ### 9. Final report
 
@@ -205,6 +208,7 @@ skills.sh **不靠 GitHub crawl 实时同步**；安装遥测会更新 installs�
 
 - 只测 API、不测 `npx skills find`（find-skills 验收不合格）
 - 为 SEO 把 description 堆到 >1024 或毁掉 agent 触发语义
-- 未发布就宣称 “skills.sh 已更新”
+- 未发布、或页面正文仍旧（只涨了 installs）就宣称 “skills.sh 已更新”
+- 在 `index lag` / content reindex 未知时继续堆 description 并解读 search miss
 - 用安装量碾压的竞品排名苛责零安装新 skill，却不记遥测/owner 策略
 - 每轮改 queries 导致无法对比（queries 冻结；新词开 vNext 文件）

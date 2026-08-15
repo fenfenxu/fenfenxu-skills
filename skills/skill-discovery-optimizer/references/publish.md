@@ -14,16 +14,38 @@ skills.sh listing is driven by **install telemetry** from `npx skills add`, not 
 npx skills add <owner>/<repo> --skill <skill-name> -g -y
 ```
 
-6. Optional: open/verify https://skills.sh/\<owner\>/\<repo\>/\<skill\>  
-   - Compare page body to GitHub `SKILL.md`. If the site still shows an old intro, treat search as **stale index** and pause description-only SEO loops.  
-7. Wait for reindex (minutes to longer); then re-run eval  
-8. Record commit SHA + install time + whether skills.sh body matched GitHub in CHANGELOG  
+6. **Verify listing content** (not just installs): open  
+   `https://www.skills.sh/<owner>/<repo>/<skill>`  
+   Compare JSON-LD / meta `description` and body opener to GitHub `SKILL.md`.  
+   Install count going up ≠ content reindexed.  
+7. If body/description still old → record `index lag` in CHANGELOG, **pause** description SEO loop, wait / re-check later. Do not treat search misses as keyword failure.  
+8. Only after listing text matches (or you explicitly accept stale-index risk): re-run eval  
+9. Record commit SHA + install count + whether skills.sh **content** matched GitHub in CHANGELOG  
+
+## Known unknown: content reindex
+
+Observed (agent-thread-visualizer, 2026-08-15):
+
+| Signal | After `npx skills add` |
+|--------|-------------------------|
+| Install counter on skills.sh | Updates (e.g. 2 → 5) |
+| Page / JSON-LD `description` + SKILL.md body | Can stay on an **older** snapshot for hours+ |
+| When / what triggers full content reindex | **Unknown** (not documented; not implied by install telemetry alone) |
+
+Implications for this skill’s loop:
+
+- Description GEO cannot be closed-loop validated while listing text is stale.
+- Correct agent behavior: **stop keyword iteration**, keep `--owner` docs, poll the page later; resume eval only after content catch-up.
+- Do not promise “skills.sh updated” from push + install alone.
+
+Until Vercel/skills.sh documents reindex timing, treat content refresh as an external blocker.
 
 ## Do not
 
 - Force-push unless user asks  
 - Skip hooks unless user asks  
 - Promise immediate leaderboard placement after one install  
+- Keep rewriting `description` while the public page still shows the previous SKILL.md  
 
 ## Low-install reality
 

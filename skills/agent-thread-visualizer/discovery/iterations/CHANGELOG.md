@@ -37,6 +37,11 @@ Append one section per loop. Keep queries.json frozen within a campaign.
   - cli 0.000 / P0 0.000 (unchanged)
   - cli-owner 0.561→0.585 (+1: `子agent 可视化`); P0 still 1.000
   - Host-only queries still miss on cli-owner (EN often loses to `fenfenxu/droplink-skills@droplink-cli`)
-- Publish: `57558ff` + repo/global `npx skills add` (installs≈3)
-- Finding: https://skills.sh/fenfenxu/fenfenxu-skills/agent-thread-visualizer still shows **pre-GEO body** (“先收集 thread…”); GitHub main already has new opener → **index lag / scrape not refreshed**. Further description churn won't move search until skills.sh reindexes content.
-- Decision: **stop** description loop for this campaign; treat optimal-as-of-now = P0 cli-owner 100% + documented `--owner` finds; residual risk = global CLI + stale skills.sh snapshot + host-query collisions under owner `fenfenxu`
+- Publish: `57558ff` + repo/global `npx skills add` (installs≈3 at postpublish; later **2→5**)
+- Finding (2026-08-15 ~15:00 CST): https://www.skills.sh/fenfenxu/fenfenxu-skills/agent-thread-visualizer
+  - **Installs refreshed** (telemetry works): 2 → 5
+  - **Content NOT reindexed**: JSON-LD/meta description still `Collect, normalize, summarize…`; body opener still `先收集 thread…`; no `Agent 会话可视化` / new first paragraph on the page
+  - GitHub `main` already has v1 GEO copy → listing text ≠ repo
+- Blocker: **skills.sh content reindex principle & timing are unknown**. `npx skills add` clearly bumps install count, but does **not** (or not promptly) refresh indexed `description` / `SKILL.md` body used for search + page. Without a fresh content snapshot, description SEO loops cannot be validated — further keyword edits would be noise.
+- Decision: **pause** this campaign’s description/search optimization until page/LD shows v1 copy (or we learn how/when reindex runs). Meanwhile keep: P0 `cli-owner` 100% + documented `--owner` finds. Residual risk = global CLI + stale skills.sh content index + host-query collisions under owner `fenfenxu`.
+- Next (when unblocked): page-verify fresh → re-run same `queries.json` as v1.5 / v2 measurement only (no new hypothesis until baseline reflects new text).
