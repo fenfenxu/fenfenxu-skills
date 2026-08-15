@@ -15,8 +15,9 @@ npx skills add <owner>/<repo> --skill <skill-name> -g -y
 ```
 
 6. Optional: open/verify https://skills.sh/\<owner\>/\<repo\>/\<skill\>  
+   - Compare page body to GitHub `SKILL.md`. If the site still shows an old intro, treat search as **stale index** and pause description-only SEO loops.  
 7. Wait for reindex (minutes to longer); then re-run eval  
-8. Record commit SHA + install time in CHANGELOG  
+8. Record commit SHA + install time + whether skills.sh body matched GitHub in CHANGELOG  
 
 ## Do not
 

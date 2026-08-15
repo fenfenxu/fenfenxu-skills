@@ -27,11 +27,16 @@ Append one section per loop. Keep queries.json frozen within a campaign.
 
 ## v1 — 2026-08-15
 
-- Hypothesis: leading with `Agent 会话可视化` + explicit `Cursor/Claude Code 会话|session|セッション` improves api/cli-owner host recall; global cli still install-bound
+- Hypothesis: leading with `Agent 会话可视化` + explicit host `会话|session|セッション` improves api/cli-owner host recall; global cli still install-bound
 - Changes:
   - `SKILL.md` description lead + host phrases (834 chars)
   - body opener + README find examples (zh/en/ja)
   - `agents/openai.yaml` short_description
-- Metrics: see `v1-postpublish.json` after publish
-- Publish: this commit + `npx skills add`
-- Decision: pending re-eval
+- Metrics vs v0 (`v1-postpublish.json`):
+  - api 0.122 / P0 0.286 (unchanged)
+  - cli 0.000 / P0 0.000 (unchanged)
+  - cli-owner 0.561→0.585 (+1: `子agent 可视化`); P0 still 1.000
+  - Host-only queries still miss on cli-owner (EN often loses to `fenfenxu/droplink-skills@droplink-cli`)
+- Publish: `57558ff` + repo/global `npx skills add` (installs≈3)
+- Finding: https://skills.sh/fenfenxu/fenfenxu-skills/agent-thread-visualizer still shows **pre-GEO body** (“先收集 thread…”); GitHub main already has new opener → **index lag / scrape not refreshed**. Further description churn won't move search until skills.sh reindexes content.
+- Decision: **stop** description loop for this campaign; treat optimal-as-of-now = P0 cli-owner 100% + documented `--owner` finds; residual risk = global CLI + stale skills.sh snapshot + host-query collisions under owner `fenfenxu`

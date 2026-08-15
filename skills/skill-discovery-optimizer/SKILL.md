@@ -169,7 +169,11 @@ python3 scripts/run_discovery_eval.py \
 npx skills add <owner>/<repo> --skill <skill-name> -g -y
 ```
 
-skills.sh **不靠 GitHub crawl**；安装遥测才进索引。推送后索引可能延迟——复测前等一会儿或注明 “pending reindex”。
+skills.sh **不靠 GitHub crawl 实时同步**；安装遥测会更新 installs，但 **SKILL.md 正文/description 可能滞后**。发布后务必打开 `https://skills.sh/<owner>/<repo>/<skill>`，核对页面是否已是新文案。若仍显示旧正文：
+
+- 不要继续堆 description 指望立刻涨分
+- 在 CHANGELOG 记 `index lag`
+- 过一段时间或更多 installs 后再复测；达标判定可暂以 `cli-owner` + GitHub 源文案为准
 
 ### 7–8. Re-validate & loop
 
