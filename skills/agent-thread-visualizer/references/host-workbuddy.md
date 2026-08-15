@@ -1,7 +1,7 @@
 # Workbuddy
 
-- last_verified: 2026-08
-- confidence: low
+- last_verified: 2026-08-15 (client 2.115.0, macOS arm64)
+- confidence: medium (layout verified; current-session transcript NOT locally readable)
 
 Host manual for locating agent conversation threads stored by Workbuddy. Treat paths as heuristics; verify against live signals before relying on a match. Layout details are largely unverified — mark unknowns as 待核实.
 
@@ -13,8 +13,12 @@ Host manual for locating agent conversation threads stored by Workbuddy. Treat p
 
 ## Known locations
 
-- **App support root:** `~/Library/Application Support/com.workbuddy.workbuddy/`
-- **Exact session file layout:** 待核实 — probe for `sessions`, `threads`, `conversations`, `*.jsonl`, `*.db` under the app support tree
+- **App support root:** `~/Library/Application Support/com.workbuddy.workbuddy/` — verified 2026-08-15: contains only `Documents/`; no session/thread/conversation files here
+- **Verified 2026-08-15, root `~/.workbuddy/`:**
+  - `~/.workbuddy/sessions/<pid>.json` — live process heartbeats only (pid, sessionId like `interactive-2001`, cwd, startedAt); NOT transcripts
+  - `~/.workbuddy/workspace/sessions/<uuid>/` — one dir per workspace session, exists but observed empty for an active session; do not expect transcript files
+  - `~/.workbuddy/workbuddy.db` (+wal/shm) — SQLite; automations/tasks etc.; **do not guess conversation table schemas** — conversation history appears server-side (use the host's conversation search API if exposed), not reliably in local files
+- **Practical fallback (verified):** for the *current* session, the running agent has the conversation itself in context — use in-conversation timestamps as the evidence source and mark per-turn end times as estimated; for *past* sessions, prefer the host's conversation-search tool over local file probing
 - **Never invent SQLite schemas** — if a DB is found, prefer official export/API or ask the user for a known-good export path rather than guessing table/column names
 
 ## ID vs name

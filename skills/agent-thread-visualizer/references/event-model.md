@@ -31,7 +31,8 @@ Unclassifiable → `other` (keep original type).
 - **Display layers:**
   - Primary (expanded): goal, main stages, key decisions, failures/retries, sub-agent start/join, environment
   - Secondary (collapsed): per-stage skills list, tool summaries, waits, compaction/context signals
-  - Detail (on expand): exact times, evidence, single tool arg summaries, related events
+  - Detail (on expand): exact times, evidence, single tool arg summaries, related events; **place detail next to main timeline (before long sub-agent lists)**; label skills with an explicit “Skills” block
+- Stage colors: green = progress, red = failure/detour, yellow = blocked waiting on user
 - Redact secrets / huge payloads from visualization body; keep fold counts + evidence refs. Redaction ≠ discard.
 
 ## Sub-agent labeling
