@@ -1,0 +1,1663 @@
+{
+  "generated_at": "2026-08-15T05:30:53.552223+00:00",
+  "label": "v0-baseline",
+  "target": {
+    "owner": "fenfenxu",
+    "repo": "fenfenxu-skills",
+    "skill": "agent-thread-visualizer"
+  },
+  "modes": [
+    "api",
+    "cli",
+    "cli-owner"
+  ],
+  "api_limit": 40,
+  "description_chars": 731,
+  "summary": {
+    "by_channel": {
+      "api": {
+        "hits": 5,
+        "misses": 36,
+        "errors": 0,
+        "hit_rate": 0.122,
+        "p0_hit_rate": 0.286,
+        "p0_hits": 2,
+        "p0_total": 7
+      },
+      "cli": {
+        "hits": 0,
+        "misses": 41,
+        "errors": 0,
+        "hit_rate": 0.0,
+        "p0_hit_rate": 0.0,
+        "p0_hits": 0,
+        "p0_total": 7
+      },
+      "cli-owner": {
+        "hits": 23,
+        "misses": 18,
+        "errors": 0,
+        "hit_rate": 0.561,
+        "p0_hit_rate": 1.0,
+        "p0_hits": 7,
+        "p0_total": 7
+      }
+    },
+    "by_lang": {
+      "zh:cli_miss": 14,
+      "en:cli_miss": 14,
+      "ja:cli_miss": 13
+    },
+    "p0": {}
+  },
+  "results": [
+    {
+      "lang": "zh",
+      "priority": "p0",
+      "intent": "primary Chinese",
+      "query": "agent 会话可视化",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "libtv-labs/libtv-skills/libtv-skill",
+            "pippit-dev/pippit-skills/xyq-nest-skill",
+            "alchaincyf/mrbeast-skill/mrbeast-perspective"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 4,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "oil-oil/codex@codex",
+            "karasukaigan/skills-zh@qa"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 3,
+          "n": 3,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "zh",
+      "priority": "p0",
+      "intent": "short Chinese",
+      "query": "会话可视化",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "fuzzy",
+          "top": [
+            "libtv-labs/libtv-skills/libtv-skill",
+            "pippit-dev/pippit-skills/xyq-nest-skill",
+            "skills.volces.com/byted-kickart-marketing-material-generator"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 6,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "zrt-ai-lab/opencode-skills@auto-douyin",
+            "feiskyer/claude-code-settings@grill-me"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 2,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "zh",
+      "priority": "p1",
+      "intent": "timeline",
+      "query": "agent 时间线",
+      "channels": {
+        "api": {
+          "hit": true,
+          "rank": 25,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "xindoo/sumeru/sumeru-review",
+            "lingfengqaq/webnovel-writer/webnovel-plan",
+            "pluviobyte/rnskill/ra-audio-to-subtitles"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "xindoo/sumeru@sumeru-review",
+            "cnife/xueqiu-skills@crawl-xueqiu-my-timeline"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 3,
+          "n": 3,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "zh",
+      "priority": "p1",
+      "intent": "subagent",
+      "query": "子agent 可视化",
+      "channels": {
+        "api": {
+          "hit": true,
+          "rank": 32,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "lijigang/ljg-skills/ljg-skill-map",
+            "alchaincyf/huashu-skills/huashu-douyin-script",
+            "theplannerivan/planners-ppt-hell/planners-ppt-hell"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 5,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "vivy-yi/xiaohongshu-skills@data-visualization",
+            "dy9759/text2knowledgecards@data-visualization-expert"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 0,
+          "exit": 0,
+          "top": []
+        }
+      }
+    },
+    {
+      "lang": "zh",
+      "priority": "p1",
+      "intent": "session report",
+      "query": "会话报告",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "fuzzy",
+          "top": [
+            "jnmetacode/superpowers-zh/subagent-driven-development",
+            "feiskyer/claude-code-settings/grill-me",
+            "huifer/claude-code-seo/guest-blogger"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 6,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "feiskyer/claude-code-settings@grill-me",
+            "huifer/claude-code-seo@guest-blogger"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 0,
+          "exit": 0,
+          "top": []
+        }
+      }
+    },
+    {
+      "lang": "zh",
+      "priority": "p1",
+      "intent": "session analyzer",
+      "query": "会话分析",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "fuzzy",
+          "top": [
+            "vivy-yi/xiaohongshu-skills/topic-analysis",
+            "dontbesilent2025/claude-skills/lacan",
+            "feiskyer/claude-code-settings/grill-me"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "vivy-yi/xiaohongshu-skills@topic-analysis",
+            "feiskyer/claude-code-settings@grill-me"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 2,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "zh",
+      "priority": "p1",
+      "intent": "debug",
+      "query": "调试 agent 会话",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "oil-oil/codex/codex",
+            "leokemp223/embed-ai-tool/debug-platformio",
+            "leokemp223/embed-ai-tool/debug-gdb-openocd"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "oil-oil/codex@codex",
+            "leokemp223/embed-ai-tool@debug-platformio"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 3,
+          "n": 3,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "zh",
+      "priority": "p1",
+      "intent": "colloquial",
+      "query": "看看 agent 做了什么",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "dontbesilent2025/dbskill/dbs",
+            "tanweai/pua/mama",
+            "codestable/codestable/cs"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 6,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "dontbesilent2025/dbskill@dbs",
+            "tanweai/pua@mama"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 3,
+          "n": 3,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "zh",
+      "priority": "p0",
+      "intent": "execution map",
+      "query": "执行地图",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "fuzzy",
+          "top": [
+            "jnmetacode/superpowers-zh/executing-plans",
+            "amap-web/amap-lbs-skill/amap-lbs-skill",
+            "amap-web/amap-skills/amap-jsapi-skill"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 5,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "amap-web/amap-lbs-skill@amap-lbs-skill",
+            "caoliao/qrcode-skills@qrcode-skills"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 2,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "zh",
+      "priority": "p1",
+      "intent": "execution flow",
+      "query": "agent 执行流程",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "agentbay-ai/agentbay-skills/agentbay-monitor-skills",
+            "21307369/superpowers-zh/executing-plans",
+            "ab300819/skills/devdocs-dev-workflow"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 5,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "okteam99/teamwork@teamwork",
+            "gmwenterprise/route-spec@exec-plan"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 3,
+          "n": 3,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "zh",
+      "priority": "p1",
+      "intent": "host Cursor",
+      "query": "Cursor 会话",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "pippit-dev/pippit-skills/xyq-nest-skill",
+            "membranedev/application-skills/cursor",
+            "skills.volces.com/cross-session-memory"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "feiskyer/claude-code-settings@grill-me",
+            "karasukaigan/skills-zh@qa"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 0,
+          "exit": 0,
+          "top": []
+        }
+      }
+    },
+    {
+      "lang": "zh",
+      "priority": "p1",
+      "intent": "host Claude",
+      "query": "Claude Code 会话",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "pippit-dev/pippit-skills/xyq-nest-skill",
+            "skills.volces.com/cross-session-memory",
+            "duc01226/easyplatform/claude-code"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 5,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "feiskyer/claude-code-settings@grill-me",
+            "ben2pc/g-claude-code-plugins@claude-code-agent"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 0,
+          "exit": 0,
+          "top": []
+        }
+      }
+    },
+    {
+      "lang": "zh",
+      "priority": "p1",
+      "intent": "host Workbuddy",
+      "query": "Workbuddy 会话",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "libtv-labs/libtv-skills/libtv-skill",
+            "pippit-dev/pippit-skills/xyq-nest-skill",
+            "riba2534/feishu-cli/feishu-cli-chat"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "feiskyer/claude-code-settings@grill-me",
+            "ruan-cat/monorepo@cleanup-agent-team-node-processes"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 0,
+          "exit": 0,
+          "top": []
+        }
+      }
+    },
+    {
+      "lang": "zh",
+      "priority": "p1",
+      "intent": "host kimi",
+      "query": "kimi-code 会话",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "amelnagdy/delegate-skills/kimi-delegate",
+            "aaaaqwq/agi-super-team/wecom-automation",
+            "mxyhi/ok-skills/kimi-webbridge"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 6,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "hchen1218/token-receipt@token-receipt",
+            "feiskyer/claude-code-settings@grill-me"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 0,
+          "exit": 0,
+          "top": []
+        }
+      }
+    },
+    {
+      "lang": "en",
+      "priority": "p0",
+      "intent": "skill name phrase",
+      "query": "agent thread visualizer",
+      "channels": {
+        "api": {
+          "hit": true,
+          "rank": 13,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "kostja94/marketing-skills/twitter-x-posts",
+            "lovartai/lovart-skill/lovart-api",
+            "composio-community/awesome-codex-skills/agent-deep-links"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "lovartai/lovart-skill@lovart-api",
+            "basicmachines-co/basic-memory@memory-capture"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 3,
+          "n": 3,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "en",
+      "priority": "p0",
+      "intent": "exact skill id",
+      "query": "agent-thread-visualizer",
+      "channels": {
+        "api": {
+          "hit": true,
+          "rank": 13,
+          "n": 40,
+          "searchType": "fuzzy",
+          "top": [
+            "kostja94/marketing-skills/twitter-x-posts",
+            "lovartai/lovart-skill/lovart-api",
+            "composio-community/awesome-codex-skills/agent-deep-links"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "lovartai/lovart-skill@lovart-api",
+            "basicmachines-co/basic-memory@memory-capture"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 3,
+          "n": 3,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "en",
+      "priority": "p1",
+      "intent": "timeline",
+      "query": "agent session timeline",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "greensock/gsap-skills/gsap-timeline",
+            "thedotmack/claude-mem/timeline-report",
+            "thedotmack/claude-mem/mem-search"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "thedotmack/claude-mem@timeline-report",
+            "boshu2/agentops@trace"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 3,
+          "n": 3,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "en",
+      "priority": "p1",
+      "intent": "session report",
+      "query": "session report",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "anthropics/claude-plugins-official/session-report",
+            "rohitg00/agentmemory/session-history",
+            "microsoft/win-dev-skills/winui-session-report"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "anthropics/claude-plugins-official@session-report",
+            "antithesishq/antithesis-skills@antithesis-agent-browser"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "en",
+      "priority": "p1",
+      "intent": "log analyzer",
+      "query": "session log analyzer",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "openclaw/openclaw/session-logs",
+            "ai-native-camp/camp-2/session-analyzer",
+            "dagster-io/erk/session-inspector"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "openclaw/openclaw@session-logs",
+            "ai-native-camp/camp-2@session-analyzer"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "en",
+      "priority": "p1",
+      "intent": "agent flow",
+      "query": "agent flow visualization",
+      "channels": {
+        "api": {
+          "hit": true,
+          "rank": 34,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "forcedotcom/sf-skills/generating-mermaid-diagrams",
+            "eraserlabs/eraser-io/eraser-diagrams",
+            "builderio/skills/visual-plan"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 6,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "nvidia/skills@doca-flow-tune",
+            "amazon-agi-labs/nova-act-agent-skills@ui-verification"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 3,
+          "n": 3,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "en",
+      "priority": "p1",
+      "intent": "execution map",
+      "query": "execution map",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "teneoprotocolai/teneo-skills/google-maps-teneo",
+            "borghei/claude-skills/senior-pm",
+            "dralgorhythm/claude-agentic-framework/execution-roadmaps"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "indranilbanerjee/digital-marketing-pro@data-import",
+            "dralgorhythm/claude-agentic-framework@execution-roadmaps"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 3,
+          "n": 3,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "en",
+      "priority": "p1",
+      "intent": "conversation viz",
+      "query": "conversation visualizer",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "nexscope-ai/amazon-skills/amazon-listing-images",
+            "nexscope-ai/amazon-skills/amazon-a-plus-content",
+            "louisblythe/sales-skills/conversation-pause-intelligence"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 6,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "nexscope-ai/amazon-skills@amazon-listing-images",
+            "aws-samples/sample-strands-agent-with-agentcore@visualization"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 2,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "en",
+      "priority": "p1",
+      "intent": "subagent",
+      "query": "subagent timeline",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "greensock/gsap-skills/gsap-timeline",
+            "thedotmack/claude-mem/weekly-digests",
+            "refoundai/lenny-skills/managing-timelines"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "thedotmack/claude-mem@weekly-digests",
+            "curiositech/some_claude_skills@skill-architect"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 0,
+          "exit": 0,
+          "top": []
+        }
+      }
+    },
+    {
+      "lang": "en",
+      "priority": "p1",
+      "intent": "debug",
+      "query": "debug agent session",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "affaan-m/ecc/agent-introspection-debugging",
+            "microsoft/vscode/agent-sessions-layout",
+            "ai-native-camp/camp-2/session-analyzer"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "jaganpro/sf-skills@sf-ai-agentforce-observability",
+            "steel-dev/skills@steel-session-debugging"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 3,
+          "n": 3,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "en",
+      "priority": "p1",
+      "intent": "host Cursor",
+      "query": "Cursor session",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "amelnagdy/delegate-skills/cursor-delegate",
+            "andreadellacorte/groove/groove-admin-cursor-hooks",
+            "membranedev/application-skills/cursor"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "andreadellacorte/groove@groove-admin-cursor-hooks",
+            "membranedev/application-skills@cursor"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "en",
+      "priority": "p1",
+      "intent": "host Workbuddy",
+      "query": "Workbuddy session",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "rohitg00/agentmemory/session-history",
+            "intsig-textin/xparse-skills/xparse-parse",
+            "ngmeyer/skills/session-close"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "intsig-textin/xparse-skills@xparse-parse",
+            "zjp1997720/zhijian-skills@workbuddy-cli-model-bridge"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "en",
+      "priority": "p1",
+      "intent": "host kimi",
+      "query": "kimi-code session",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "amelnagdy/delegate-skills/kimi-delegate",
+            "kunchenguid/quota-axi/quota-axi",
+            "mxyhi/ok-skills/kimi-webbridge"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "amelnagdy/delegate-skills@kimi-delegate",
+            "robsonrung/rar-skills@kimi-runner"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "en",
+      "priority": "p1",
+      "intent": "colloquial",
+      "query": "visualize the run",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "posthog/skills/triaging-visual-review-runs",
+            "petrkindlmann/qa-skills/visual-testing",
+            "donchitos/claude-code-game-studios/art-bible"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "posthog/skills@triaging-visual-review-runs",
+            "chanakya-net/maestro-ai@run-with-it"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 3,
+          "n": 3,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/droplink-skills@droplink-cli",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "ja",
+      "priority": "p0",
+      "intent": "session visualization",
+      "query": "エージェント セッション 可視化",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "vivy-yi/xiaohongshu-skills/data-visualization",
+            "riba2534/feishu-cli/feishu-cli-visual",
+            "zexuanw958-svg/travel-plan-viz/travel-plan-viz"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 5,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "efoo-team/skills@agent-native-project-design",
+            "kjfsm/skills@qa"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 2,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "ja",
+      "priority": "p0",
+      "intent": "short",
+      "query": "セッション可視化",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "fuzzy",
+          "top": [
+            "interfacex-co-jp/genshijin/genshijin-help",
+            "vivy-yi/xiaohongshu-skills/data-visualization",
+            "riba2534/feishu-cli/feishu-cli-visual"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 6,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "interfacex-co-jp/genshijin@genshijin-help",
+            "shunsukehayashi/miyabi-claude-plugins@tmux"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 2,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "ja",
+      "priority": "p1",
+      "intent": "timeline",
+      "query": "エージェント タイムライン",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "gingiris-1031/gingiris-skills/gingiris-seo-geo-agent",
+            "nicepkg/ai-workflow/scenario-analyzer",
+            "j5ik2o/ai-tools/takt-facet-builder"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 5,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "nicepkg/ai-workflow@scenario-analyzer",
+            "schroneko/skills@x-report"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 0,
+          "exit": 0,
+          "top": []
+        }
+      }
+    },
+    {
+      "lang": "ja",
+      "priority": "p1",
+      "intent": "subagent",
+      "query": "サブエージェント 可視化",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "kazukinagata/shinkoku/reading-invoice",
+            "kazukinagata/shinkoku/reading-withholding",
+            "kazukinagata/shinkoku/reading-receipt"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 6,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "kazukinagata/shinkoku@reading-invoice",
+            "kazukinagata/shinkoku@reading-withholding"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 2,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "ja",
+      "priority": "p1",
+      "intent": "session report",
+      "query": "セッションレポート",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 2,
+          "searchType": "fuzzy",
+          "top": [
+            "dsgarage/conference-report-config/gdc-session-report",
+            "nagi-inaba/claude-code-setup/session-report"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 3,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "dsgarage/conference-report-config@gdc-session-report",
+            "nagi-inaba/claude-code-setup@session-report"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 0,
+          "exit": 0,
+          "top": []
+        }
+      }
+    },
+    {
+      "lang": "ja",
+      "priority": "p1",
+      "intent": "session analysis",
+      "query": "セッション分析",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "fuzzy",
+          "top": [
+            "dotneet/claude-code-marketplace/suggest-agent-rules",
+            "cat-xierluo/legal-skills/patent-analysis",
+            "j5ik2o/ai-tools/takt-analyzer"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 0,
+          "exit": 0,
+          "top": []
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 2,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "ja",
+      "priority": "p1",
+      "intent": "visualize execution",
+      "query": "エージェントの実行を可視化",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "fuzzy",
+          "top": [
+            "fandhe-ai/agent-cli-skills/create-plan",
+            "fandhe-ai/agent-cli-skills/implement-issue-tree",
+            "efoo-team/skills/formation-designer"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "efoo-team/skills@agent-native-project-design",
+            "elchika-inc/agent-toolkit@documenting-verification"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 2,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "ja",
+      "priority": "p1",
+      "intent": "execution map",
+      "query": "実行マップ",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "fuzzy",
+          "top": [
+            "tokoroten/prompt-review/prompt-review",
+            "mizchi/skills/extract-glossary",
+            "diverta/kuroco-skills/kuroco-admin-api"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "j5ik2o/okite-ai@refactoring-packages",
+            "kjfsm/skills@ask-kjfsm"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 2,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "ja",
+      "priority": "p1",
+      "intent": "execution flow",
+      "query": "エージェント 実行フロー",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "progress-all/acomo-skills/acomo",
+            "baserproject/baser-skills/basercms-unittest",
+            "okazuki58/agent-skills/dev-plan"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 6,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "hayashiii-ghub/hikizan@jikkou",
+            "ac2393921/long-running-harness@evaluate"
+          ]
+        },
+        "cli-owner": {
+          "hit": true,
+          "rank": 2,
+          "n": 2,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "fenfenxu/fenfenxu-skills@agent-thread-visualizer"
+          ]
+        }
+      }
+    },
+    {
+      "lang": "ja",
+      "priority": "p1",
+      "intent": "host Cursor",
+      "query": "Cursor セッション",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "amelnagdy/delegate-skills/cursor-delegate",
+            "membranedev/application-skills/cursor",
+            "vesely/skills/cursor-agent"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "membranedev/application-skills@cursor",
+            "chachamaru127/claude-code-harness@session-init"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 0,
+          "exit": 0,
+          "top": []
+        }
+      }
+    },
+    {
+      "lang": "ja",
+      "priority": "p1",
+      "intent": "host Claude",
+      "query": "Claude Code セッション",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "dotneet/claude-code-marketplace/suggest-agent-rules",
+            "duc01226/easyplatform/claude-code",
+            "0xdarkmatter/claude-mods/claude-code-debug"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 6,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "duc01226/easyplatform@claude-code",
+            "chachamaru127/claude-code-harness@session-memory"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 0,
+          "exit": 0,
+          "top": []
+        }
+      }
+    },
+    {
+      "lang": "ja",
+      "priority": "p1",
+      "intent": "host Workbuddy",
+      "query": "Workbuddy セッション",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "intsig-textin/xparse-skills/xparse-parse",
+            "tencentedgeone/edgeone-makers-tools/edgeone-makers-env-adaption",
+            "zjp1997720/zhijian-skills/workbuddy-cli-model-bridge"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "intsig-textin/xparse-skills@xparse-parse",
+            "zjp1997720/zhijian-skills@workbuddy-cli-model-bridge"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 0,
+          "exit": 0,
+          "top": []
+        }
+      }
+    },
+    {
+      "lang": "ja",
+      "priority": "p1",
+      "intent": "host kimi",
+      "query": "kimi-code セッション",
+      "channels": {
+        "api": {
+          "hit": false,
+          "rank": null,
+          "n": 40,
+          "searchType": "semantic",
+          "top": [
+            "amelnagdy/delegate-skills/kimi-delegate",
+            "mxyhi/ok-skills/kimi-webbridge",
+            "firede/agent-skills/kimi-tools"
+          ]
+        },
+        "cli": {
+          "hit": false,
+          "rank": null,
+          "n": 7,
+          "exit": 0,
+          "top": [
+            "owner/repo@skill",
+            "chachamaru127/claude-code-harness@session-memory",
+            "chachamaru127/claude-code-harness@session"
+          ]
+        },
+        "cli-owner": {
+          "hit": false,
+          "rank": null,
+          "n": 0,
+          "exit": 0,
+          "top": []
+        }
+      }
+    }
+  ]
+}

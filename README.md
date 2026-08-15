@@ -22,6 +22,13 @@ Browse on skills.sh: [agent-thread-visualizer](https://skills.sh/fenfenxu/fenfen
 Find via CLI (skills.sh ranks by install count; use `--owner` for a reliable hit while installs are low):
 
 ```bash
+# English
+npx skills find "agent thread visualizer" --owner fenfenxu
+# Chinese
+npx skills find "agent 会话可视化" --owner fenfenxu
+# Japanese
+npx skills find "セッション可視化" --owner fenfenxu
+
 npx skills find agent-thread-visualizer --owner fenfenxu
 ```
 

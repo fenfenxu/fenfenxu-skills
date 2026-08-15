@@ -1,18 +1,20 @@
 ---
 name: agent-thread-visualizer
 description: >-
-  Visualizes AI agent sessions as execution maps / swimlane timelines. Locates
-  Cursor, Codex, Claude Code, Workbuddy, kimi-code threads by ID or name;
-  collects skills, tools, sub-agents, retries, forks, waits; layered i18n
-  output + session-health tips. Triggers (EN): agent thread visualizer, agent
-  session timeline, session report, session log analyzer, agent flow
-  visualization, execution map, conversation visualizer, subagent timeline,
-  debug agent session, visualize the run. (ZH): agent 会话可视化, 会话可视化,
-  agent 时间线, 子agent 可视化, 会话报告, 会话分析, 执行地图, agent 执行流程,
-  调试 agent 会话, 看看 agent 做了什么, Workbuddy 会话, kimi-code 会话. (JA):
-  エージェント セッション 可視化, セッション可視化, エージェント
-  タイムライン, サブエージェント 可視化, セッションレポート, セッション分析,
-  実行マップ, エージェント 実行フロー, エージェントの実行を可視化.
+  Agent 会话可视化 / session timeline: execution maps for Cursor, Codex, Claude
+  Code, Workbuddy, kimi-code threads (ID or name); skills/tools/sub-agents;
+  retries/forks/waits; layered i18n + session-health. Triggers (EN): agent
+  thread visualizer, agent-thread-visualizer, agent session timeline, session
+  report, session log analyzer, agent flow visualization, execution map,
+  conversation visualizer, subagent timeline, debug agent session, visualize
+  the run, Cursor session, Claude Code session, Workbuddy session, kimi-code
+  session. (ZH): agent 会话可视化, 会话可视化, agent 时间线, 子agent 可视化,
+  会话报告, 会话分析, 执行地图, agent 执行流程, 调试 agent 会话, Cursor 会话,
+  Claude Code 会话, Workbuddy 会话, kimi-code 会话. (JA): エージェント
+  セッション 可視化, セッション可視化, エージェント タイムライン,
+  サブエージェント 可視化, セッションレポート, 実行マップ, エージェント
+  実行フロー, Cursor セッション, Claude Code セッション, Workbuddy
+  セッション, kimi-code セッション.
 license: MIT
 metadata:
   author: fenfenxu
@@ -21,9 +23,9 @@ metadata:
 
 # Agent Thread Visualizer
 
-Visualizes AI agent sessions as execution maps: locate a Cursor / Codex / Claude Code / Workbuddy / kimi-code thread by ID or name, collect skills, tools, and sub-agents, then render a layered swimlane timeline (timing, retries, forks, waits) with expandable detail and optional session-health tips.
+Agent 会话可视化 / session timeline: locate a Cursor / Codex / Claude Code / Workbuddy / kimi-code thread by ID or name, collect skills, tools, and sub-agents, then render a layered swimlane execution map (timing, retries, forks, waits) with expandable detail and optional session-health tips.
 
-中文检索/触发词：agent 会话可视化、会话可视化、agent 时间线、子 agent 可视化、会话报告、执行地图、agent 执行流程。日文：エージェント セッション 可視化、セッション可視化、実行マップ、エージェント タイムライン。
+中文检索：agent 会话可视化、会话可视化、执行地图、会话报告、Cursor/Claude/Workbuddy/kimi-code 会话。English: agent thread visualizer, session timeline, execution map. 日文：セッション可視化、実行マップ、エージェント タイムライン。
 
 先完整采集 thread 的执行事实，再为展示做折叠、脱敏和分层，最后组织成易读的时间线、分支图或对比图。输出语言跟随用户使用的语言或明确要求；用户使用中文时可直接用中文。技术名称只在追踪来源确实有帮助时作为次要信息出现。
 
