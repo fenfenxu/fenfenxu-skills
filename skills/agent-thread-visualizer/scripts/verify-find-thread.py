@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Verify scripts/find-thread with a 2×2 matrix that actually has teeth.
+"""Verify find-thread-by-id / find-thread-by-name with a 2×2 matrix.
 
 Coverage (per available host fixture):
 
   |            | should HIT                         | should MISS                          |
   |------------|------------------------------------|--------------------------------------|
-  | by ID      | real session UUID / short UUID     | fabricated UUID never on disk        |
-  | by name    | distinctive prompt/title substring | nonsense keyword guaranteed absent   |
+  | by-id      | real session UUID / short UUID     | fabricated UUID never on disk        |
+  | by-name    | distinctive prompt/title substring | nonsense keyword guaranteed absent   |
+
+Each axis calls the dedicated script — no auto UUID-vs-name detection.
 
 Fixtures are discovered from paths in references/host-*.md (live local stores).
 Name queries are extracted from each fixture's first user message — not hard-coded
@@ -33,7 +35,8 @@ from pathlib import Path
 
 HOME = Path.home()
 SKILL_ROOT = Path(__file__).resolve().parent.parent
-FIND_THREAD = SKILL_ROOT / "scripts" / "find-thread"
+FIND_BY_ID = SKILL_ROOT / "scripts" / "find-thread-by-id"
+FIND_BY_NAME = SKILL_ROOT / "scripts" / "find-thread-by-name"
 UUID_RE = re.compile(
     r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
     re.I,
@@ -282,9 +285,9 @@ def discover_fixtures() -> list[Fixture]:
     return fixtures
 
 
-def run_find(*args: str) -> list[dict]:
+def run_find(script: Path, *args: str) -> list[dict]:
     proc = subprocess.run(
-        [sys.executable, str(FIND_THREAD), *args, "--json", "-n", "20"],
+        [sys.executable, str(script), *args, "--json", "-n", "20"],
         capture_output=True,
         text=True,
         cwd=str(SKILL_ROOT),
@@ -330,16 +333,17 @@ def main() -> int:
     args = ap.parse_args()
     want = {h.strip() for h in args.hosts.split(",") if h.strip()}
 
-    if not FIND_THREAD.is_file():
-        print(f"FAIL: missing {FIND_THREAD}", file=sys.stderr)
-        return 1
+    for path in (FIND_BY_ID, FIND_BY_NAME):
+        if not path.is_file():
+            print(f"FAIL: missing {path}", file=sys.stderr)
+            return 1
 
     fixtures = [f for f in discover_fixtures() if f.host in want]
     if not fixtures:
         print("No local fixtures found under documented host paths.", file=sys.stderr)
         return 2
 
-    print("Matrix: ID×name  ×  hit×miss")
+    print("Matrix: by-id × by-name  ×  hit×miss")
     print("Fixtures:")
     for f in fixtures:
         print(f"  [{f.host}] id={f.session_id}")
@@ -354,7 +358,7 @@ def main() -> int:
         host = f.host
 
         # ---- ID / HIT (full) ----
-        hits = run_find(f.session_id, "-a", host, "--all")
+        hits = run_find(FIND_BY_ID, f.session_id, "-a", host, "--all")
         ok = hit_matches(hits, f) and any(
             (h.get("path") or "") == str(f.path) for h in hits
         )
@@ -370,7 +374,7 @@ def main() -> int:
 
         # ---- ID / HIT (short) ----
         short = f.session_id[:8]
-        hits = run_find(short, "-a", host, "--all")
+        hits = run_find(FIND_BY_ID, short, "-a", host, "--all")
         ok = hit_matches(hits, f)
         record(
             results,
@@ -381,16 +385,8 @@ def main() -> int:
         )
 
         # ---- ID / MISS ----
-        # Use a per-host fake so we don't accidentally collide; still globally unused.
         fake = FAKE_UUID if FAKE_UUID != f.session_id else str(uuid.uuid4())
-        hits = run_find(fake, "-a", host, "--all")
-        ok = not hit_matches(hits, f) and not any(fake in (h.get("path") or "") for h in hits)
-        # Stronger: zero hits preferred; allow unrelated hits only if fake id absent
-        ok = len(hits) == 0 or (
-            not any(fake[:8].lower() in (h.get("session_id") or "").lower() for h in hits)
-            and not any(fake in (h.get("path") or "") for h in hits)
-        )
-        # For fabricated full UUID, expect empty
+        hits = run_find(FIND_BY_ID, fake, "-a", host, "--all")
         ok = len(hits) == 0
         record(
             results,
@@ -405,7 +401,7 @@ def main() -> int:
             print(f"SKIP  {host} | name+ | (no usable prompt name)")
             skipped += 1
         else:
-            hits = run_find(f.name_query, "-a", host, "--all")
+            hits = run_find(FIND_BY_NAME, f.name_query, "-a", host, "--all")
             ok = hit_matches(hits, f)
             record(
                 results,
@@ -419,7 +415,7 @@ def main() -> int:
                     print(f"         -> {h.get('session_id')} {h.get('prompt','')[:50]}")
 
         # ---- NAME / MISS ----
-        hits = run_find(FAKE_NAME, "-a", host, "--all")
+        hits = run_find(FIND_BY_NAME, FAKE_NAME, "-a", host, "--all")
         ok = len(hits) == 0
         record(
             results,

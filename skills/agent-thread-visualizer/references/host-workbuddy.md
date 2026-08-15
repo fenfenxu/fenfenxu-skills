@@ -30,7 +30,7 @@ Host manual for locating agent conversation threads stored by Workbuddy. Treat p
 ## ID vs name
 
 - **ID:** transcript UUID / filename stem (e.g. `6b01c691-e361-4e08-9ad6-cb21353d858a` from `*.jsonl`)
-- **Name:** 待核实 — UI titles are not guaranteed in filenames; scan jsonl for title/summary keys or first user-role message text; else fuzzy over filename stems
+- **Name (primary for users):** Workbuddy UI **does not expose session IDs** — users search by sidebar title only. Titles live in `~/.workbuddy/workbuddy.db` table `sessions` (`title`, optional `custom_title`; prefer `custom_title` when set). Join `sessions.id` to `~/.workbuddy/projects/**/<id>.jsonl`.
 - Do not conflate `~/.workbuddy/sessions/<pid>.json` sessionIds (`interactive-2001`) with conversation thread UUIDs
 
 ## Probe order

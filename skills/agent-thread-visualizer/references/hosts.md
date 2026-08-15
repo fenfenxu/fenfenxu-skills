@@ -2,7 +2,10 @@
 
 ## Lookup order (anti-staleness)
 
-1. Prefer this skill’s bundled `scripts/find-thread` (run as `python3 scripts/find-thread …` from the skill root, or via that script’s absolute path). Do not install it onto the user’s PATH.
+1. Prefer this skill’s bundled locators — **you choose** which one:
+   - `python3 scripts/find-thread-by-id <uuid>` when the user gave a session id
+   - `python3 scripts/find-thread-by-name [keywords]` for titles / topic words / recent
+   Do not install scripts onto the user’s PATH. Do not use a single auto-detect script.
 2. Live signals in the current environment (API / transcript paths / agent metadata)
 3. Matching `references/host-<name>.md` probe order (`last_verified` / `confidence`)
 4. Generic heuristics below
@@ -27,10 +30,17 @@ Default: search **only** the current host. Cross-host only if the user explicitl
 
 ## Resolve ID vs name
 
-- Looks like stable ID (UUID, long hex, host-specific prefix) → exact ID first
-- Else → title/name exact, then fuzzy/contains
+- **Model decides** which script to run; scripts do not guess UUID vs name.
+- Session UUID / fragment → `find-thread-by-id` only (path/filename match)
+- Title / topic / first-user keywords / “recent” → `find-thread-by-name` (UI title first, then first-user prompt):
+  - Cursor: `conversation-search.db` `conversations.title` (Agents sidebar); legacy `composer.composerHeaders`
+  - Codex: `state_*.sqlite` `threads.title` / `session_index.thread_name`
+  - Workbuddy: `workbuddy.db` `sessions.title`/`custom_title` (UI has no ID — name is primary)
+  - Claude: jsonl `type=ai-title` → `aiTitle`
+  - kimi: per-session `state.json` → `title`
+- Unsure → try the more likely one; on zero hits, try the other
 - Multiple hits → short chooser (title, time, path/ID); never silent pick
-- Zero hits → report steps tried + manual confidence; ask for path/keywords/paste
+- Zero hits after both → report steps tried + manual confidence; ask for path/keywords/paste
 
 ## Generic fallback (unlisted or failed host)
 

@@ -22,8 +22,8 @@ Host manual for locating agent conversation threads stored by OpenAI Codex (CLI 
 
 ## ID vs name
 
-- **ID:** UUID segments inside `rollout-...-<uuid>.jsonl` filenames (match full UUID or distinctive suffix)
-- **Name:** 待核实 — search rollout metadata / first user message if file format allows; Codex may not persist a separate human title outside the jsonl content
+- **ID:** UUID segments inside `rollout-...-<uuid>.jsonl` filenames (match full UUID or distinctive suffix); also `threads.id` in `~/.codex/state_*.sqlite`
+- **Name:** UI/sidebar title is in `~/.codex/state_*.sqlite` table `threads.title` (and mirrored as `thread_name` in `~/.codex/session_index.jsonl`). Prefer these over scanning rollout jsonl. Some rows store huge approval/transcript dumps in `title` — treat very long titles as non-UI and do not prefer them in name search.
 - Do not conflate rollout filename timestamps with session display names
 
 ## Probe order

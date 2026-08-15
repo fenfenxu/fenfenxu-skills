@@ -1,4 +1,4 @@
 interface:
   display_name: "Agent Thread Visualizer"
   short_description: "Agent 会话可视化 / session timeline for Cursor·Codex·Claude·Workbuddy·kimi-code — execution maps, skills/tools/sub-agents."
-  default_prompt: "Use this skill’s scripts/find-thread to locate the agent thread by the session ID or name I give (current host first: Cursor, Codex, Claude Code, Workbuddy, or kimi-code). Collect stages, skills, tool calls, sub-agents (type/name), failures, and environment, then produce a layered, expandable execution map. If evidence supports it, end with brief session-health tips."
+  default_prompt: "Use this skill’s find-thread-by-id (session UUID) or find-thread-by-name (title/keywords/recent)—you choose which; do not auto-guess in one script. Current host first: Cursor, Codex, Claude Code, Workbuddy, or kimi-code. Collect stages, skills, tool calls, sub-agents (type/name), failures, and environment, then produce a layered, expandable execution map. If evidence supports it, end with brief session-health tips."

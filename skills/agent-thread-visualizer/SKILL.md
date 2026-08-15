@@ -33,19 +33,28 @@ Agent 会话可视化 / session timeline: locate a Cursor / Codex / Claude Code 
 
 ### 1. 识别宿主并定位会话
 
-定位会话时**必须优先跑本 skill 自带的** [scripts/find-thread](scripts/find-thread)，不要手搓 `find ~`、不要往用户 PATH 装任何东西。
+定位会话时**必须优先跑本 skill 自带脚本**，不要手搓 `find ~`、不要往用户 PATH 装任何东西。
 
-在本 skill 根目录执行（若 cwd 不在 skill 内，用本文件旁的 `scripts/find-thread` 绝对路径）：
+**由你（模型）判断用哪一个——脚本不做 UUID vs 名称的自动猜测：**
+
+| 你手里有什么 | 跑哪个 |
+|--------------|--------|
+| 会话 UUID / 短片段（用户粘贴的 id） | [scripts/find-thread-by-id](scripts/find-thread-by-id) |
+| 标题、话题词、首条消息关键词，或只要最近会话 | [scripts/find-thread-by-name](scripts/find-thread-by-name) |
+| 拿不准 | 先按语义选一个；零命中再换另一个，不要指望单一脚本两边都搜 |
+
+在本 skill 根目录执行（若 cwd 不在 skill 内，用脚本绝对路径）：
 
 ```bash
-python3 scripts/find-thread                         # 当前工作区最近会话
-python3 scripts/find-thread 6b01c691                # UUID / 片段
-python3 scripts/find-thread "关键词"                # 标题 / 首条用户消息 / rg
-python3 scripts/find-thread -a workbuddy --all -n 20
-python3 scripts/find-thread --json 水火箭
+python3 scripts/find-thread-by-name                         # 当前工作区最近会话
+python3 scripts/find-thread-by-id 6b01c691                   # UUID / 路径片段
+python3 scripts/find-thread-by-name "关键词"                # 标题 / 首条用户消息
+python3 scripts/find-thread-by-name --deep 水火箭           # 必要时全文 rg
+python3 scripts/find-thread-by-id -a workbuddy --all -n 20 <uuid>
+python3 scripts/find-thread-by-name --json 水火箭
 ```
 
-脚本默认按 cwd 收窄项目；ID 先匹配路径；内容走 `~/.cache/agent-thread-find/` 与可选 `rg`。多命中时把表格给用户选；零命中再读宿主手册或问路径。
+脚本默认按 cwd 收窄项目；内容走 `~/.cache/agent-thread-find/`。多命中时把表格给用户选（并看 `MATCH_VIA` / JSON 的 `match_via`：`title-exact` > `title-substr` > `title-fuzzy` > `title-tokens` > `prompt-*`；`title-fuzzy` / token 质量基于编辑距离）；零命中再换另一种查找方式、读宿主手册或问路径。
 
 然后按 [references/hosts.md](references/hosts.md) 核对宿主，并打开对应手册（如 [host-cursor.md](references/host-cursor.md)）。默认只查当前宿主；用户点名其他工具才跨宿主。未收录宿主走通用回退，不拒绝执行。
 
@@ -162,16 +171,20 @@ python3 scripts/find-thread --json 水火箭
 
 | Script | Role |
 |--------|------|
-| [scripts/find-thread](scripts/find-thread) | 跨宿主快速定位 thread（ID / 项目 / 关键词）；本 skill 定位步骤的默认入口 |
-| [scripts/verify-find-thread.py](scripts/verify-find-thread.py) | 按 host 手册路径抽样真实会话，回查 find-thread（见 [VERIFY.md](VERIFY.md)） |
+| [scripts/find-thread-by-id](scripts/find-thread-by-id) | 只按会话 UUID / 路径片段定位 |
+| [scripts/find-thread-by-name](scripts/find-thread-by-name) | 只按 UI 标题 / 首条用户消息关键词定位（无参 = 最近会话）；结果含 `match_via`（title-* / prompt-* / rg / recent）供多命中择优 |
+| [scripts/_find_thread_common.py](scripts/_find_thread_common.py) | 上述两者的共享实现（不要直接当入口） |
+| [scripts/find-thread](scripts/find-thread) | 已废弃：打印用法并 exit 2，提醒改用上面两个 |
+| [scripts/verify-find-thread.py](scripts/verify-find-thread.py) | 按 host 手册路径抽样真实会话，分别回查 by-id / by-name（见 [VERIFY.md](scripts/VERIFY.md)） |
 
-相对本 skill 根目录调用：`python3 scripts/find-thread …`。从其他 cwd 跑时，传入本 skill 内该脚本的绝对路径。
+相对本 skill 根目录调用。从其他 cwd 跑时，传入本 skill 内脚本的绝对路径。
 
 **禁止**：把脚本安装/symlink 到用户 `PATH`、`~/.local/bin` 或改用户 shell 配置。这是 skill 打包能力，不是本机全局 CLI。
 
 ## Anti-patterns
 
-- 跳过 `scripts/find-thread`，一上来全盘 `find ~` / 手翻数千 jsonl
+- 跳过定位脚本，一上来全盘 `find ~` / 手翻数千 jsonl
+- 在脚本里写死「看起来像 UUID 就走 ID」之类的启发式（交给调用方判断）
 - 把 skill 脚本装进用户 PATH 或当成系统工具分发
 - 在本文件复制或猜测宿主落盘路径（应读 `references/host-*.md`）
 - 多命中时静默挑一个，不给用户选

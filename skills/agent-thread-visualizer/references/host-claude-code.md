@@ -22,8 +22,8 @@ Host manual for locating agent conversation threads stored by Claude Code (CLI a
 ## ID vs name
 
 - **ID:** session UUID if present in filenames or metadata (match full UUID or distinctive suffix)
-- **Name:** match title/summary fields when present in session metadata or jsonl headers; else first user turn snippet
-- Display titles in Claude Code UI are not guaranteed to appear in filenames; do not assume filename equals display name
+- **Name:** Claude Code persists sidebar titles as jsonl events `type=ai-title` with field `aiTitle` (may appear multiple times; use the latest). Coverage is partial — older/short sessions may lack `ai-title`; then fall back to first user turn / `last-prompt`.
+- Display titles in Claude Code UI are not guaranteed in filenames; do not assume filename equals display name
 
 ## Probe order
 

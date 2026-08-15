@@ -21,9 +21,9 @@ Host manual for locating agent conversation threads stored by kimi-code (CLI/pro
 
 ## ID vs name
 
-- **ID:** session directory / UUID folder names under `sessions/`
-- **Name:** check `session_index.jsonl` or per-session metadata when available; else fuzzy over known titles or first user message snippet
-- Do not assume folder name equals display title when an index file is available — prefer index metadata first
+- **ID:** session directory / UUID folder names under `sessions/` (often `session_<uuid>/`)
+- **Name:** each session dir has `state.json` with `title` (and `lastPrompt`, which may diverge). Prefer `title` for name search; `session_index.jsonl` only maps id→dir/cwd and does **not** store titles.
+- Do not assume folder name equals display title when `state.json` is available — prefer `state.json.title` first
 
 ## Probe order
 

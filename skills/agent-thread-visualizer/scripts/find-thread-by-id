@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+"""Locate agent threads by session UUID / path fragment only.
+
+The caller (LLM) decides this is an ID lookup — no auto name fallback.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from _find_thread_common import run_cli  # noqa: E402
+
+if __name__ == "__main__":
+    raise SystemExit(run_cli("id"))
