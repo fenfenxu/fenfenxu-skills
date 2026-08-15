@@ -33,11 +33,21 @@ Agent 会话可视化 / session timeline: locate a Cursor / Codex / Claude Code 
 
 ### 1. 识别宿主并定位会话
 
-- 按 [references/hosts.md](references/hosts.md) 的实时信号、宿主手册、通用启发和用户提供路径的顺序识别宿主。
-- 识别后读取匹配的宿主手册：例如 Cursor 使用 [references/host-cursor.md](references/host-cursor.md)；其他宿主手册从 `references/hosts.md` 进入。不要在本文件复制或猜测宿主路径。
-- 默认只查当前宿主；用户明确指定其他工具时才跨宿主查找。
-- 输入像稳定 ID 时先精确匹配 ID；否则先匹配名称/标题，再做模糊匹配。多条命中时让用户选择，零命中时报告已尝试步骤和未知项。
-- 未收录宿主不拒绝执行，走通用回退。
+定位会话时**必须优先跑本 skill 自带的** [scripts/find-thread](scripts/find-thread)，不要手搓 `find ~`、不要往用户 PATH 装任何东西。
+
+在本 skill 根目录执行（若 cwd 不在 skill 内，用本文件旁的 `scripts/find-thread` 绝对路径）：
+
+```bash
+python3 scripts/find-thread                         # 当前工作区最近会话
+python3 scripts/find-thread 6b01c691                # UUID / 片段
+python3 scripts/find-thread "关键词"                # 标题 / 首条用户消息 / rg
+python3 scripts/find-thread -a workbuddy --all -n 20
+python3 scripts/find-thread --json 水火箭
+```
+
+脚本默认按 cwd 收窄项目；ID 先匹配路径；内容走 `~/.cache/agent-thread-find/` 与可选 `rg`。多命中时把表格给用户选；零命中再读宿主手册或问路径。
+
+然后按 [references/hosts.md](references/hosts.md) 核对宿主，并打开对应手册（如 [host-cursor.md](references/host-cursor.md)）。默认只查当前宿主；用户点名其他工具才跨宿主。未收录宿主走通用回退，不拒绝执行。
 
 ### 2. 确定分析范围
 
@@ -147,3 +157,21 @@ Agent 会话可视化 / session timeline: locate a Cursor / Codex / Claude Code 
 
 - 只在用户确实需要探索执行过程时创建可视化；静态关系足够时用 Mermaid。
 - 动态时间线、分支、点击详情使用 HTML 可视化，并遵循可用的 `visualize` skill 输出契约。
+
+## Scripts
+
+| Script | Role |
+|--------|------|
+| [scripts/find-thread](scripts/find-thread) | 跨宿主快速定位 thread（ID / 项目 / 关键词）；本 skill 定位步骤的默认入口 |
+| [scripts/verify-find-thread.py](scripts/verify-find-thread.py) | 按 host 手册路径抽样真实会话，回查 find-thread（见 [VERIFY.md](VERIFY.md)） |
+
+相对本 skill 根目录调用：`python3 scripts/find-thread …`。从其他 cwd 跑时，传入本 skill 内该脚本的绝对路径。
+
+**禁止**：把脚本安装/symlink 到用户 `PATH`、`~/.local/bin` 或改用户 shell 配置。这是 skill 打包能力，不是本机全局 CLI。
+
+## Anti-patterns
+
+- 跳过 `scripts/find-thread`，一上来全盘 `find ~` / 手翻数千 jsonl
+- 把 skill 脚本装进用户 PATH 或当成系统工具分发
+- 在本文件复制或猜测宿主落盘路径（应读 `references/host-*.md`）
+- 多命中时静默挑一个，不给用户选

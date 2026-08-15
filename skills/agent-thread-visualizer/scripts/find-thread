@@ -1,0 +1,701 @@
+#!/usr/bin/env python3
+"""Fast multi-host agent thread locator.
+
+One-liner examples:
+  find-thread                         # recent threads for $PWD
+  find-thread 6b01c691                # ID / path fragment
+  find-thread 水火箭                   # fuzzy title / first-user text
+  find-thread -a workbuddy --all      # one host, no project scope
+  find-thread --json -n 20 shader
+
+Design for speed (not exhaustive recall):
+  1) Prefer project-scoped dirs derived from cwd (ms-level)
+  2) Match ID against path/filename before opening files
+  3) Snippet cache keyed by path+mtime (~/.cache/agent-thread-find/)
+  4) Content search: ripgrep when available; else scan recent files only
+  5) Full cross-project scan only with --all (or when ID search misses scoped)
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Iterable, Iterator, Optional
+
+HOME = Path.home()
+CACHE_DIR = HOME / ".cache" / "agent-thread-find"
+CACHE_FILE = CACHE_DIR / "snippets.json"
+UUID_RE = re.compile(
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+    re.I,
+)
+HOSTS = ("cursor", "codex", "claude", "workbuddy", "kimi")
+
+
+@dataclass
+class Hit:
+    host: str
+    session_id: str
+    path: str
+    mtime: float
+    project: str
+    prompt: str
+    match: str  # id | path | prompt | rg | recent
+
+    def age(self) -> str:
+        return _fmt_age(self.mtime)
+
+
+def _fmt_age(mtime: float) -> str:
+    sec = max(0, time.time() - mtime)
+    if sec < 60:
+        return f"{int(sec)}s"
+    if sec < 3600:
+        return f"{int(sec // 60)}m"
+    if sec < 86400:
+        return f"{int(sec // 3600)}h"
+    return f"{int(sec // 86400)}d"
+
+
+def _fmt_time(mtime: float) -> str:
+    return datetime.fromtimestamp(mtime).strftime("%m-%d %H:%M")
+
+
+def encode_workspace(path: Path) -> str:
+    """Best-effort slug used by Cursor / Workbuddy / Claude-ish layouts."""
+    s = str(path.resolve())
+    if s.startswith(str(HOME)):
+        s = s[len(str(HOME)) :].lstrip("/")
+        # Claude often prefixes with -Users-...
+        claude = "-" + s.replace("/", "-")
+        cursorish = s.replace("/", "-")
+        return cursorish  # primary; callers may also try claude form
+    return s.replace("/", "-").lstrip("-")
+
+
+def workspace_slugs(cwd: Path) -> list[str]:
+    raw = str(cwd.resolve())
+    under_home = raw.startswith(str(HOME) + "/") or raw == str(HOME)
+    rel = raw[len(str(HOME)) :].lstrip("/") if under_home else raw.lstrip("/")
+    dashed = rel.replace("/", "-")
+    variants = [
+        dashed,
+        "Users-" + dashed if not dashed.startswith("Users-") and under_home else dashed,
+        "-" + dashed,
+        "-Users-" + dashed if not dashed.startswith("Users-") else "-" + dashed,
+    ]
+    # also leaf-only fuzzy token for glob
+    leaf = cwd.name
+    out: list[str] = []
+    for v in variants + [leaf]:
+        if v and v not in out:
+            out.append(v)
+    return out
+
+
+def looks_like_id(q: str) -> bool:
+    q = q.strip()
+    if UUID_RE.fullmatch(q):
+        return True
+    if re.fullmatch(r"[0-9a-f]{8,}", q, re.I) and len(q) >= 8:
+        return True
+    if UUID_RE.search(q) and " " not in q and len(q) <= 64:
+        return True
+    return False
+
+
+# ---------- discovery (path only; no content) ----------
+
+
+def discover_cursor(scoped: Optional[list[str]], all_projects: bool) -> list[Path]:
+    root = HOME / ".cursor" / "projects"
+    if not root.exists():
+        return []
+    files: list[Path] = []
+    if not all_projects and scoped:
+        for slug in scoped:
+            for d in root.glob(f"*{slug}*"):
+                at = d / "agent-transcripts"
+                if at.is_dir():
+                    files.extend(at.rglob("*.jsonl"))
+        if files:
+            return files
+    # broad: only under agent-transcripts dirs
+    for at in root.glob("*/agent-transcripts"):
+        files.extend(at.rglob("*.jsonl"))
+    return files
+
+
+def discover_codex(all_projects: bool, cwd: Optional[Path] = None) -> list[Path]:
+    roots = [HOME / ".codex" / "sessions", HOME / ".codex" / "archived_sessions"]
+    files: list[Path] = []
+    for root in roots:
+        if not root.exists():
+            continue
+        files.extend(root.rglob("rollout-*.jsonl"))
+    # No project slug tree — keep a recent window unless --all (cwd filter would need opening files).
+    if all_projects:
+        return files
+    files.sort(key=lambda p: p.stat().st_mtime if p.exists() else 0, reverse=True)
+    return files[:120]
+
+
+def discover_claude(scoped: Optional[list[str]], all_projects: bool) -> list[Path]:
+    root = HOME / ".claude" / "projects"
+    if not root.exists():
+        return []
+    files: list[Path] = []
+    if not all_projects and scoped:
+        for slug in scoped:
+            for d in root.glob(f"*{slug}*"):
+                if d.is_dir():
+                    files.extend(d.glob("*.jsonl"))
+        if files:
+            return files
+    for d in root.iterdir():
+        if d.is_dir():
+            files.extend(d.glob("*.jsonl"))
+    return files
+
+
+def discover_workbuddy(scoped: Optional[list[str]], all_projects: bool) -> list[Path]:
+    root = HOME / ".workbuddy" / "projects"
+    if not root.exists():
+        return []
+    files: list[Path] = []
+    if not all_projects and scoped:
+        for slug in scoped:
+            for d in root.glob(f"*{slug}*"):
+                if d.is_dir():
+                    files.extend(d.glob("*.jsonl"))
+        if files:
+            return files
+    for d in root.iterdir():
+        if d.is_dir():
+            files.extend(d.glob("*.jsonl"))
+    return files
+
+
+def discover_kimi(all_projects: bool = True) -> list[Path]:
+    files: list[Path] = []
+    for root in (HOME / ".kimi-code" / "sessions", HOME / ".kimi" / "sessions"):
+        if not root.exists():
+            continue
+        # Prefer transcript-like files; skip noisy state/index sidecars.
+        for p in root.rglob("*"):
+            if not p.is_file():
+                continue
+            name = p.name.lower()
+            if name in {"state.json", "config.json", "meta.json"}:
+                continue
+            if p.suffix == ".jsonl" or name in {"wire.jsonl", "transcript.jsonl", "messages.jsonl"}:
+                files.append(p)
+            elif p.suffix == ".json" and "session" in name:
+                files.append(p)
+    files.sort(key=lambda p: p.stat().st_mtime if p.exists() else 0, reverse=True)
+    return files if all_projects else files[:80]
+
+
+def discover(
+    hosts: Iterable[str],
+    cwd: Path,
+    all_projects: bool,
+) -> dict[str, list[Path]]:
+    scoped = None if all_projects else workspace_slugs(cwd)
+    out: dict[str, list[Path]] = {}
+
+    def one(host: str) -> tuple[str, list[Path]]:
+        if host == "cursor":
+            return host, discover_cursor(scoped, all_projects)
+        if host == "codex":
+            return host, discover_codex(all_projects, cwd)
+        if host == "claude":
+            return host, discover_claude(scoped, all_projects)
+        if host == "workbuddy":
+            return host, discover_workbuddy(scoped, all_projects)
+        if host == "kimi":
+            return host, discover_kimi(all_projects)
+        return host, []
+
+    with ThreadPoolExecutor(max_workers=5) as ex:
+        futs = [ex.submit(one, h) for h in hosts]
+        for fut in as_completed(futs):
+            host, files = fut.result()
+            out[host] = files
+    return out
+
+
+# ---------- snippet extraction + cache ----------
+
+
+def _text_from_content(content) -> str:
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                for k in ("text", "input_text", "content"):
+                    if k in item and isinstance(item[k], str):
+                        parts.append(item[k])
+                        break
+        return "\n".join(parts)
+    if isinstance(content, dict):
+        return _text_from_content(content.get("text") or content.get("content"))
+    return str(content)
+
+
+def _clean_prompt(text: str, limit: int = 120) -> str:
+    text = text or ""
+    # strip common wrappers
+    text = re.sub(r"<system-reminder[\s\S]*?</system-reminder>", " ", text)
+    text = re.sub(r"<user_query>([\s\S]*?)</user_query>", r"\1", text)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    if len(text) > limit:
+        return text[: limit - 1] + "…"
+    return text
+
+
+def extract_prompt(host: str, path: Path, max_lines: int = 80) -> str:
+    if path.is_dir():
+        return ""
+    try:
+        with path.open("r", encoding="utf-8", errors="ignore") as f:
+            if host == "codex":
+                for i, line in enumerate(f):
+                    if i >= max_lines * 3:
+                        break
+                    try:
+                        d = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    pl = d.get("payload") or {}
+                    if d.get("type") == "response_item" and pl.get("type") == "message" and pl.get("role") == "user":
+                        return _clean_prompt(_text_from_content(pl.get("content")))
+                    if pl.get("role") == "user" and pl.get("content"):
+                        return _clean_prompt(_text_from_content(pl.get("content")))
+                return ""
+            if host == "workbuddy":
+                for i, line in enumerate(f):
+                    if i >= max_lines:
+                        break
+                    try:
+                        d = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if d.get("type") == "message" and d.get("role") == "user":
+                        return _clean_prompt(_text_from_content(d.get("content")))
+                return ""
+            # cursor / claude / kimi-ish
+            for i, line in enumerate(f):
+                if i >= max_lines:
+                    break
+                try:
+                    d = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                role = d.get("role")
+                msg = d.get("message")
+                if isinstance(msg, dict):
+                    role = role or msg.get("role")
+                    content = msg.get("content")
+                else:
+                    content = d.get("content")
+                if d.get("type") == "user" or role == "user":
+                    return _clean_prompt(_text_from_content(content))
+    except OSError:
+        return ""
+    return ""
+
+
+def session_id_of(host: str, path: Path) -> str:
+    name = path.stem if path.is_file() else path.name
+    m = UUID_RE.search(path.name) or UUID_RE.search(str(path))
+    if m:
+        return m.group(0)
+    if host == "codex":
+        # rollout-...-<uuid>
+        parts = name.split("-")
+        for i, p in enumerate(parts):
+            if len(p) == 8 and i + 4 < len(parts):
+                cand = "-".join(parts[i : i + 5])
+                if UUID_RE.fullmatch(cand):
+                    return cand
+    return name
+
+
+def project_of(host: str, path: Path) -> str:
+    parts = path.parts
+    try:
+        if host == "cursor":
+            i = parts.index("projects")
+            return parts[i + 1]
+        if host == "claude":
+            i = parts.index("projects")
+            return parts[i + 1]
+        if host == "workbuddy":
+            i = parts.index("projects")
+            return parts[i + 1]
+        if host == "codex":
+            # YYYY/MM/DD under sessions
+            return "codex"
+        if host == "kimi":
+            return "kimi"
+    except (ValueError, IndexError):
+        pass
+    return path.parent.name
+
+
+class SnippetCache:
+    def __init__(self, path: Path = CACHE_FILE):
+        self.path = path
+        self.data: dict[str, dict] = {}
+        self._dirty = False
+        self.load()
+
+    def load(self) -> None:
+        if not self.path.exists():
+            return
+        try:
+            self.data = json.loads(self.path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            self.data = {}
+
+    def save(self) -> None:
+        if not self._dirty:
+            return
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = self.path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(self.data, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(self.path)
+        self._dirty = False
+
+    def get(self, host: str, path: Path) -> str:
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            return ""
+        key = str(path)
+        ent = self.data.get(key)
+        if ent and abs(ent.get("mtime", 0) - mtime) < 0.01:
+            return ent.get("prompt") or ""
+        prompt = extract_prompt(host, path)
+        self.data[key] = {"mtime": mtime, "prompt": prompt, "host": host}
+        self._dirty = True
+        return prompt
+
+
+# ---------- matching ----------
+
+
+def path_id_match(path: Path, query: str) -> bool:
+    q = query.lower().strip()
+    return q in path.name.lower() or q in str(path).lower()
+
+
+def to_hit(host: str, path: Path, match: str, cache: SnippetCache, need_prompt: bool) -> Hit:
+    try:
+        mtime = path.stat().st_mtime
+    except OSError:
+        mtime = 0.0
+    prompt = cache.get(host, path) if need_prompt else ""
+    return Hit(
+        host=host,
+        session_id=session_id_of(host, path),
+        path=str(path),
+        mtime=mtime,
+        project=project_of(host, path),
+        prompt=prompt,
+        match=match,
+    )
+
+
+def rg_search(roots: list[Path], query: str, limit: int) -> list[Path]:
+    if not roots or not shutil.which("rg"):
+        return []
+    existing = [str(r) for r in roots if r.exists()]
+    if not existing:
+        return []
+    cmd = [
+        "rg",
+        "-l",
+        "-i",
+        "--max-count",
+        "1",
+        "-g",
+        "*.jsonl",
+        "-g",
+        "*.json",
+        query,
+        *existing,
+    ]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    paths = []
+    for line in proc.stdout.splitlines():
+        line = line.strip()
+        if line:
+            paths.append(Path(line))
+        if len(paths) >= limit * 3:
+            break
+    return paths
+
+
+def find_threads(
+    query: Optional[str],
+    hosts: list[str],
+    cwd: Path,
+    limit: int,
+    all_projects: bool,
+    deep: bool,
+) -> list[Hit]:
+    cache = SnippetCache()
+    t0 = time.perf_counter()
+    discovered = discover(hosts, cwd, all_projects=all_projects)
+    discover_ms = (time.perf_counter() - t0) * 1000
+
+    hits: list[Hit] = []
+    seen_path: set[str] = set()
+    seen_sid: set[str] = set()
+
+    def add(h: Hit) -> None:
+        if h.path in seen_path:
+            return
+        sid_key = f"{h.host}:{h.session_id}"
+        if h.session_id and sid_key in seen_sid:
+            return
+        seen_path.add(h.path)
+        if h.session_id:
+            seen_sid.add(sid_key)
+        hits.append(h)
+
+    q = (query or "").strip()
+    id_mode = bool(q) and looks_like_id(q)
+
+    # Pass 1: ID / path match (no content) — always cheapest
+    if q:
+        for host, files in discovered.items():
+            for p in files:
+                if path_id_match(p, q):
+                    add(to_hit(host, p, "id" if id_mode else "path", cache, need_prompt=True))
+
+    # Pass 2: if ID mode and scoped miss, broaden once
+    if id_mode and not hits and not all_projects:
+        discovered = discover(hosts, cwd, all_projects=True)
+        for host, files in discovered.items():
+            for p in files:
+                if path_id_match(p, q):
+                    add(to_hit(host, p, "id", cache, need_prompt=True))
+
+    # Pass 3: content / prompt — only when query is not pure ID, or ID found nothing
+    if q and (not id_mode or not hits):
+        # Prefer rg over project roots
+        roots: list[Path] = []
+        if "cursor" in hosts:
+            roots.append(HOME / ".cursor" / "projects")
+        if "codex" in hosts:
+            roots.extend([HOME / ".codex" / "sessions", HOME / ".codex" / "archived_sessions"])
+        if "claude" in hosts:
+            roots.append(HOME / ".claude" / "projects")
+        if "workbuddy" in hosts:
+            roots.append(HOME / ".workbuddy" / "projects")
+        if "kimi" in hosts:
+            roots.extend([HOME / ".kimi-code" / "sessions", HOME / ".kimi" / "sessions"])
+
+        if not all_projects:
+            # narrow roots to matching project dirs when possible
+            scoped_roots: list[Path] = []
+            slugs = workspace_slugs(cwd)
+            for host in hosts:
+                base = {
+                    "cursor": HOME / ".cursor" / "projects",
+                    "claude": HOME / ".claude" / "projects",
+                    "workbuddy": HOME / ".workbuddy" / "projects",
+                }.get(host)
+                if not base or not base.exists():
+                    continue
+                for slug in slugs:
+                    scoped_roots.extend([p for p in base.glob(f"*{slug}*") if p.is_dir()])
+            if scoped_roots:
+                roots = scoped_roots + [r for r in roots if r.name in {"sessions", "archived_sessions"}]
+
+        if deep or not id_mode:
+            for p in rg_search(roots, q, limit):
+                host = infer_host(p)
+                if host in hosts:
+                    add(to_hit(host, p, "rg", cache, need_prompt=True))
+
+        # Fallback: scan prompts of recent candidates (cached)
+        if len(hits) < limit:
+            candidates: list[tuple[str, Path]] = []
+            for host, files in discovered.items():
+                for p in files:
+                    candidates.append((host, p))
+            candidates.sort(key=lambda hp: hp[1].stat().st_mtime if hp[1].exists() else 0, reverse=True)
+            # only open a bounded window
+            window = candidates[: max(80, limit * 10)]
+            ql = q.lower()
+            for host, p in window:
+                if str(p) in seen_path:
+                    continue
+                prompt = cache.get(host, p)
+                if ql in prompt.lower() or ql in str(p).lower():
+                    add(to_hit(host, p, "prompt", cache, need_prompt=True))
+                if len(hits) >= limit * 2:
+                    break
+
+    # Pass 4: no query → recent
+    if not q:
+        candidates = []
+        for host, files in discovered.items():
+            for p in files:
+                try:
+                    candidates.append((host, p, p.stat().st_mtime))
+                except OSError:
+                    continue
+        # If scoped empty, fall back to global recent lightly
+        if not candidates and not all_projects:
+            discovered = discover(hosts, cwd, all_projects=True)
+            for host, files in discovered.items():
+                for p in files:
+                    try:
+                        candidates.append((host, p, p.stat().st_mtime))
+                    except OSError:
+                        continue
+        candidates.sort(key=lambda x: x[2], reverse=True)
+        for host, p, _ in candidates[:limit]:
+            add(to_hit(host, p, "recent", cache, need_prompt=True))
+
+    cache.save()
+    hits.sort(key=lambda h: h.mtime, reverse=True)
+    # stash timing on module for optional stderr
+    find_threads.last_stats = {  # type: ignore[attr-defined]
+        "discover_ms": round(discover_ms, 1),
+        "files": sum(len(v) for v in discovered.values()),
+        "hits": len(hits),
+    }
+    return hits[:limit]
+
+
+def infer_host(path: Path) -> str:
+    s = str(path)
+    if "/.cursor/" in s:
+        return "cursor"
+    if "/.codex/" in s:
+        return "codex"
+    if "/.claude/" in s:
+        return "claude"
+    if "/.workbuddy/" in s:
+        return "workbuddy"
+    if "/.kimi-code/" in s or "/.kimi/" in s:
+        return "kimi"
+    return "other"
+
+
+# ---------- CLI ----------
+
+
+def print_table(hits: list[Hit], stats: dict) -> None:
+    if not hits:
+        print("No threads found.")
+        print(
+            f"(scanned {stats.get('files', 0)} files in {stats.get('discover_ms', '?')}ms; "
+            "try --all, another query, or a longer ID fragment)",
+            file=sys.stderr,
+        )
+        return
+    # host  id8  age  time  project  prompt
+    rows = []
+    for h in hits:
+        rows.append(
+            (
+                h.host[:7],
+                h.session_id[:8],
+                h.age(),
+                _fmt_time(h.mtime),
+                h.project[:28],
+                (h.prompt or "")[:70],
+                h.path,
+            )
+        )
+    headers = ("HOST", "ID", "AGE", "WHEN", "PROJECT", "PROMPT", "PATH")
+    widths = [max(len(headers[i]), max(len(r[i]) for r in rows)) for i in range(6)]
+    def fmt_row(cols):
+        return "  ".join(str(cols[i]).ljust(widths[i]) for i in range(6))
+
+    print(fmt_row(headers))
+    print(fmt_row(tuple("-" * w for w in widths)))
+    for r in rows:
+        print(fmt_row(r[:6]))
+        print(f"    {r[6]}")
+    sys.stdout.flush()
+    print(
+        f"\n{len(hits)} shown · scanned {stats.get('files', 0)} files · "
+        f"discover {stats.get('discover_ms', '?')}ms",
+        file=sys.stderr,
+    )
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    ap = argparse.ArgumentParser(
+        prog="find-thread",
+        description="Fast locate Cursor / Codex / Claude Code / Workbuddy / kimi threads",
+    )
+    ap.add_argument("query", nargs="?", help="UUID / fragment / title keywords (omit = recent)")
+    ap.add_argument("-a", "--agent", action="append", choices=HOSTS, help="Limit host (repeatable)")
+    ap.add_argument("-n", "--limit", type=int, default=15, help="Max results (default 15)")
+    ap.add_argument("--all", action="store_true", help="Do not scope to current workspace")
+    ap.add_argument("--deep", action="store_true", help="Force ripgrep content search even for ID-like queries")
+    ap.add_argument("--json", action="store_true", help="JSON output")
+    ap.add_argument("-C", "--cwd", default=None, help="Workspace path (default: $PWD)")
+    ap.add_argument("--clear-cache", action="store_true", help="Drop snippet cache and exit")
+    args = ap.parse_args(argv)
+
+    if args.clear_cache:
+        if CACHE_FILE.exists():
+            CACHE_FILE.unlink()
+            print(f"Cleared {CACHE_FILE}")
+        else:
+            print("No cache to clear")
+        return 0
+
+    cwd = Path(args.cwd).resolve() if args.cwd else Path.cwd().resolve()
+    hosts = list(args.agent) if args.agent else list(HOSTS)
+
+    hits = find_threads(
+        query=args.query,
+        hosts=hosts,
+        cwd=cwd,
+        limit=args.limit,
+        all_projects=args.all,
+        deep=args.deep,
+    )
+    stats = getattr(find_threads, "last_stats", {})
+
+    if args.json:
+        print(json.dumps([asdict(h) for h in hits], ensure_ascii=False, indent=2))
+        return 0 if hits else 1
+
+    print_table(hits, stats)
+    return 0 if hits else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

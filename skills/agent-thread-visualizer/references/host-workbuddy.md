@@ -1,41 +1,50 @@
 # Workbuddy
 
 - last_verified: 2026-08-15 (client 2.115.0, macOS arm64)
-- confidence: medium (layout verified; current-session transcript NOT locally readable)
+- confidence: medium (transcripts under `~/.workbuddy/projects/` verified)
 
-Host manual for locating agent conversation threads stored by Workbuddy. Treat paths as heuristics; verify against live signals before relying on a match. Layout details are largely unverified — mark unknowns as 待核实.
+Host manual for locating agent conversation threads stored by Workbuddy. Treat paths as heuristics; verify against live signals before relying on a match.
 
 ## Live signals
 
 - Workbuddy product/app context in the session (UI references, app name, or rules mentioning Workbuddy)
-- macOS: presence of `~/Library/Application Support/com.workbuddy.workbuddy/`
-- Session or thread identifiers mentioned in Workbuddy UI or export output — field names 待核实
+- Presence of `~/.workbuddy/` (especially `projects/` with `*.jsonl` transcripts)
+- macOS: presence of `~/Library/Application Support/com.workbuddy.workbuddy/` (app support only — not where transcripts live)
+- Session or thread UUID mentioned in Workbuddy UI or export output
 
 ## Known locations
 
+- **Transcripts (primary):** `~/.workbuddy/projects/<encoded-workspace>/<uuid>.jsonl`
+  - Layout mirrors Claude Code-style project trees: one encoded workspace dir, one jsonl per thread
+  - Encoding is path-like with `/` → `-` (e.g. `/Users/liuxu/repo/local/foo` → `Users-liuxu-repo-local-foo`) — exact rules 待核实 if mapping fails
+  - Same stem often has a sibling dir `<uuid>/tool-results/` for tool artifacts (supporting evidence, not the thread itself)
+  - Format: JSONL with `type`/`role`/`content`/`timestamp` message records (schema may vary by version)
+- **Process heartbeats (NOT transcripts):** `~/.workbuddy/sessions/<pid>.json`
+  - Fields like `pid`, `sessionId` (`interactive-<pid>` / `prewarm-...`), `cwd`, `startedAt`, `kind` — use only as live-process signals
 - **App support root:** `~/Library/Application Support/com.workbuddy.workbuddy/` — verified 2026-08-15: contains only `Documents/`; no session/thread/conversation files here
-- **Verified 2026-08-15, root `~/.workbuddy/`:**
-  - `~/.workbuddy/sessions/<pid>.json` — live process heartbeats only (pid, sessionId like `interactive-2001`, cwd, startedAt); NOT transcripts
-  - `~/.workbuddy/workspace/sessions/<uuid>/` — one dir per workspace session, exists but observed empty for an active session; do not expect transcript files
-  - `~/.workbuddy/workbuddy.db` (+wal/shm) — SQLite; automations/tasks etc.; **do not guess conversation table schemas** — conversation history appears server-side (use the host's conversation search API if exposed), not reliably in local files
-- **Practical fallback (verified):** for the *current* session, the running agent has the conversation itself in context — use in-conversation timestamps as the evidence source and mark per-turn end times as estimated; for *past* sessions, prefer the host's conversation-search tool over local file probing
-- **Never invent SQLite schemas** — if a DB is found, prefer official export/API or ask the user for a known-good export path rather than guessing table/column names
+- **Other under `~/.workbuddy/`:**
+  - `workspace/sessions/<uuid>/` — observed empty for active sessions; do not expect transcript files here
+  - `workbuddy.db` (+wal/shm) — SQLite for automations/tasks etc.; **do not guess conversation table schemas** — prefer `projects/*.jsonl` over DB spelunking
+- **Never invent SQLite schemas** — if a DB is found and jsonl is missing, prefer official export/API or ask the user for a known-good export path
 
 ## ID vs name
 
-- **ID:** 待核实 field names; try filename stems and any obvious `id`/`title` JSON keys when readable files are found
-- **Name:** 待核实 — match title/summary keys if present in JSON/JSONL; else fuzzy over filename stems or first user message snippet
-- Do not assume Workbuddy persists a separate human title outside session file content
+- **ID:** transcript UUID / filename stem (e.g. `6b01c691-e361-4e08-9ad6-cb21353d858a` from `*.jsonl`)
+- **Name:** 待核实 — UI titles are not guaranteed in filenames; scan jsonl for title/summary keys or first user-role message text; else fuzzy over filename stems
+- Do not conflate `~/.workbuddy/sessions/<pid>.json` sessionIds (`interactive-2001`) with conversation thread UUIDs
 
 ## Probe order
 
-1. Confirm Workbuddy is the current host (app support dir exists or product cues in context)
-2. List likely session containers under app support (`sessions`, `threads`, `conversations`, or similar — names 待核实)
-3. ID then name match within discovered containers
-4. On miss: ask user for export/path; keep skill usable via pasted content
+1. Confirm Workbuddy is the current host (`~/.workbuddy/` or product cues)
+2. If user gave UUID (full or partial), glob `~/.workbuddy/projects/**/<uuid>*.jsonl`
+3. Else map current workspace path to `~/.workbuddy/projects/<encoded-workspace>/` and search there first (ID, then name/first-user-message fuzzy)
+4. Broader scan under `~/.workbuddy/projects/` if workspace mapping misses or user asks
+5. On miss: report steps tried + manual confidence; ask for path/export/paste — do not fall back to inventing content from `sessions/` heartbeats or guessed DB tables
 
 ## Failure / staleness notes
 
-- **Low confidence** until layout is verified on a real install — directory structure and file formats may differ from expectations
-- macOS-only app support path is the primary known root; other platforms 待核实
-- Do not invent transcript content or DB queries — if no session file resolves, report steps tried and manual confidence level before asking the user for a direct path or paste
+- Project path encoding may change across Workbuddy versions; workspace renames/moves break slug heuristics
+- Active sessions may still be writing; partial jsonl or missing final records are possible
+- `~/.workbuddy/sessions/` is easy to confuse with conversation storage — it is process state only
+- Other platforms beyond macOS home-layout 待核实
+- Do not invent transcript content — if no `projects/**/*.jsonl` resolves, say so and ask the user to paste or point to the file

@@ -2,10 +2,11 @@
 
 ## Lookup order (anti-staleness)
 
-1. Live signals in the current environment (API / transcript paths / agent metadata)
-2. Matching `references/host-<name>.md` probe order (`last_verified` / `confidence`)
-3. Generic heuristics below
-4. Ask the user for a path or pasted export
+1. Prefer this skill’s bundled `scripts/find-thread` (run as `python3 scripts/find-thread …` from the skill root, or via that script’s absolute path). Do not install it onto the user’s PATH.
+2. Live signals in the current environment (API / transcript paths / agent metadata)
+3. Matching `references/host-<name>.md` probe order (`last_verified` / `confidence`)
+4. Generic heuristics below
+5. Ask the user for a path or pasted export
 
 Manuals are heuristics. On miss, prefer “manual may be stale” over inventing a match. Note briefly when a host-manual lookup missed.
 
@@ -18,7 +19,7 @@ Use runtime cues (not user guesswork):
 | Cursor | `CURSOR_*` env, `~/.cursor/`, agent transcripts under project dirs, Cursor UI/tooling in context |
 | Codex | `~/.codex/`, Codex CLI/app context, `rollout-*.jsonl` |
 | Claude Code | `~/.claude/`, Claude Code CLI/project context |
-| Workbuddy | `com.workbuddy.workbuddy` app support / Workbuddy product cues |
+| Workbuddy | `~/.workbuddy/projects/**/*.jsonl`, `~/.workbuddy/`, Workbuddy product cues (app support alone is not transcripts) |
 | kimi-code | `~/.kimi-code/`, legacy `~/.kimi/` migration markers, kimi-code CLI/product cues |
 | other | Anything else → generic fallback only |
 
