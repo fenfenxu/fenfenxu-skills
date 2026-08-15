@@ -50,7 +50,7 @@ description: Collects, normalizes, summarizes, and visualizes one or more AI age
 
 - 每个事件包含核心字段：`id, kind, actor, parent_id, started_at, ended_at, status, human_summary, evidence_ref, confidence, environment`。
 - 有数据时添加扩展字段：`skill_refs[]`, `tool_refs[]`, `subagent_type`, `subagent_name`, `related_event_ids[]`。
-- 使用 `event-model.md` 定义的有限 `kind` 集合；无法归类时用 `other` 并保留原始类型。
+- 使用 [references/event-model.md](references/event-model.md) 定义的有限 `kind` 集合；无法归类时用 `other` 并保留原始类型。
 - 有真实时间就使用真实时间；进行中的事件以快照时间临时收尾并标记“仍在进行”。小于 60 秒显示 `n秒`，达到 1 分钟显示 `n分钟`；精确时间放详情。
 
 ### 6. 分层可视化
