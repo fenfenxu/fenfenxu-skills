@@ -1,6 +1,6 @@
 ---
 name: agent-thread-visualizer
-description: Collect, normalize, summarize, and visualize one or more AI agent threads as human-readable execution maps, with host-aware session lookup (ID or name), full collection of skills/tools/sub-agents, layered primary/secondary display, output-language i18n, and optional session-health tips. Use when a user asks to inspect an agent thread visually, find a Cursor/Codex/Claude Code/Workbuddy/kimi-code session by id or name, understand main-agent and child-agent work, explain timing, retries, detours, failures, cancellations, forks, waits, files, loaded skills, tool calls, or local/worktree execution context.
+description: Collects, normalizes, summarizes, and visualizes one or more AI agent threads as human-readable execution maps, with host-aware session lookup (ID or name), full collection of skills/tools/sub-agents, layered primary/secondary display, output-language i18n, and optional session-health tips. Use when a user asks to inspect an agent thread visually, find a Cursor/Codex/Claude Code/Workbuddy/kimi-code session by id or name, understand main-agent and child-agent work, explain timing, retries, detours, failures, cancellations, forks, waits, files, loaded skills, tool calls, or local/worktree execution context.
 ---
 
 # Agent Thread Visualizer
@@ -61,8 +61,8 @@ description: Collect, normalize, summarize, and visualize one or more AI agent t
 
 1. 说明这张图帮助用户看什么。
 2. 给出可视化内容或引用，不重复整张图的文字。
-3. 有证据且用户未拒绝建议时，追加简短“会话健康”提示，规则见 [references/session-health.md](references/session-health.md)。
-4. 最后列出来源、读取时间、未知项和明确标注的推断。
+3. 简短列出来源、读取时间、未知项和明确标注的推断。
+4. 有证据且用户未拒绝建议时，最后追加简短“会话健康”提示，规则见 [references/session-health.md](references/session-health.md)；用户拒绝建议时省略该节。
 
 ### 8. 验证
 
