@@ -19,6 +19,12 @@ npx skills add fenfenxu/fenfenxu-skills -g
 
 Browse on skills.sh: [agent-thread-visualizer](https://skills.sh/fenfenxu/fenfenxu-skills/agent-thread-visualizer)
 
+Find via CLI (skills.sh ranks by install count; use `--owner` for a reliable hit while installs are low):
+
+```bash
+npx skills find agent-thread-visualizer --owner fenfenxu
+```
+
 Local path install:
 
 ```bash
