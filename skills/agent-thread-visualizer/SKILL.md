@@ -1,9 +1,28 @@
 ---
 name: agent-thread-visualizer
-description: Collects, normalizes, summarizes, and visualizes one or more AI agent threads as human-readable execution maps, with host-aware session lookup (ID or name), full collection of skills/tools/sub-agents, layered primary/secondary display, output-language i18n, and optional session-health tips. Use when a user asks to inspect an agent thread visually, find a Cursor/Codex/Claude Code/Workbuddy/kimi-code session by id or name, understand main-agent and child-agent work, explain timing, retries, detours, failures, cancellations, forks, waits, files, loaded skills, tool calls, or local/worktree execution context.
+description: >-
+  Turns AI agent threads into human-readable execution maps and swimlane
+  timelines — host-aware session lookup by ID or name (Cursor, Codex, Claude
+  Code, Workbuddy, kimi-code), full collection of skills/tools/sub-agents,
+  retries/failures/forks/waits, layered primary/secondary detail, i18n output,
+  and optional session-health tips. Use whenever someone wants an agent thread
+  visualizer, agent session timeline, session report, session log analyzer,
+  agent flow visualization, execution map, conversation visualizer, subagent
+  timeline, transcript inspection, orchestration debug, or to find/inspect a
+  Cursor, Codex, Claude Code, Workbuddy, or kimi-code session by id or name and
+  explain timing, tool calls, loaded skills, or local/worktree context — even
+  if they say "show what the agent did", "debug this session", "Workbuddy
+  session", "kimi-code session", or "visualize the run" without naming this
+  skill.
+license: MIT
+metadata:
+  author: fenfenxu
+  category: observability
 ---
 
 # Agent Thread Visualizer
+
+Visualizes AI agent sessions as execution maps: locate a Cursor / Codex / Claude Code / Workbuddy / kimi-code thread by ID or name, collect skills, tools, and sub-agents, then render a layered swimlane timeline (timing, retries, forks, waits) with expandable detail and optional session-health tips.
 
 先完整采集 thread 的执行事实，再为展示做折叠、脱敏和分层，最后组织成易读的时间线、分支图或对比图。输出语言跟随用户使用的语言或明确要求；用户使用中文时可直接用中文。技术名称只在追踪来源确实有帮助时作为次要信息出现。
 

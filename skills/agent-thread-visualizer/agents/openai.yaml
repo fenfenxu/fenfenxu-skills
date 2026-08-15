@@ -1,4 +1,4 @@
 interface:
   display_name: "Agent Thread Visualizer"
-  short_description: "按宿主定位会话，整理 skills/工具/子 Agent，输出可展开的执行地图"
-  default_prompt: "请在当前 AI 工具内按我给的会话 ID 或名称定位 thread，尽量完整收集阶段、skills、工具调用、子 Agent（含类型/名称）、失败与环境信息，再生成主次分层、细节可展开的执行地图；若有证据，文末可附简短会话健康建议。"
+  short_description: "Locate Cursor/Codex/Claude Code/Workbuddy/kimi-code sessions by ID or name; collect skills/tools/sub-agents; render swimlane execution maps and session timelines."
+  default_prompt: "Locate the agent thread by the session ID or name I give (current host first: Cursor, Codex, Claude Code, Workbuddy, or kimi-code). Collect stages, skills, tool calls, sub-agents (type/name), failures, and environment, then produce a layered, expandable execution map. If evidence supports it, end with brief session-health tips."

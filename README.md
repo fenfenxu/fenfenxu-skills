@@ -1,23 +1,25 @@
 # fenfenxu-skills
 
-我的个人 [Agent Skills](https://agentskills.io/) 仓库。可被 Cursor、Codex、Claude Code 等通过 `npx skills` 安装。
+Personal [Agent Skills](https://agentskills.io/) for Cursor, Codex, Claude Code, Workbuddy, kimi-code, and other `npx skills` hosts.
 
 [![skills.sh](https://skills.sh/b/fenfenxu/fenfenxu-skills)](https://skills.sh/fenfenxu/fenfenxu-skills)
 
-## 安装
+## Install
 
 ```bash
-# 安装全部 skills
+# Install all skills
 npx skills add fenfenxu/fenfenxu-skills
 
-# 只安装某一个
+# Install one skill
 npx skills add fenfenxu/fenfenxu-skills --skill agent-thread-visualizer
 
-# 全局安装（跨项目可用）
+# Global install
 npx skills add fenfenxu/fenfenxu-skills -g
 ```
 
-本地开发时可直接用路径：
+Browse on skills.sh: [agent-thread-visualizer](https://skills.sh/fenfenxu/fenfenxu-skills/agent-thread-visualizer)
+
+Local path install:
 
 ```bash
 npx skills add /Users/liuxu/repo/local/fenfenxu-skills --list
@@ -25,29 +27,39 @@ npx skills add /Users/liuxu/repo/local/fenfenxu-skills --list
 
 ## Skills
 
-| Skill | 说明 |
-|-------|------|
-| [`agent-thread-visualizer`](skills/agent-thread-visualizer) | 按宿主定位会话 ID/名称，完整收集 skills/工具/子 Agent，输出主次分层、可展开的执行地图 |
+| Skill | What it does | Find with |
+|-------|----------------|-----------|
+| [`agent-thread-visualizer`](skills/agent-thread-visualizer) | Host-aware session lookup (ID/name) for Cursor / Codex / Claude Code / Workbuddy / kimi-code; full collect of skills/tools/sub-agents; layered swimlane **execution map** / **agent session timeline** | `agent thread visualizer`, `session timeline`, `session report`, `agent flow`, `execution map`, `subagent timeline`, `conversation visualizer`, `debug agent session`, `Workbuddy session`, `kimi-code session` |
 
-## 仓库结构
+### agent-thread-visualizer
+
+Turns opaque agent runs into readable execution maps:
+
+- **Locate**: Cursor, Codex, Claude Code, Workbuddy, kimi-code sessions by ID or title
+- **Collect**: stages, loaded skills, tool calls, sub-agents, retries, forks, waits, worktree context
+- **Show**: primary/secondary layered swimlanes; expandable detail; optional session-health tips
+
+Useful when you need a session report, session log walkthrough, agent flow visualization, or transcript inspection — not just a token/context dump.
+
+## Repo layout
 
 ```text
 skills/
 └── <skill-name>/
-    ├── SKILL.md          # 必需
-    ├── agents/           # 可选：各 agent 的展示元数据
-    ├── scripts/          # 可选
-    └── references/       # 可选
+    ├── SKILL.md          # required
+    ├── agents/           # optional host UI metadata
+    ├── scripts/          # optional
+    └── references/       # optional
 ```
 
-源码放在 `skills/`。`.agents/` 等是本地安装目录，已 gitignore，不要提交。
+Source lives under `skills/`. `.agents/` is a local install dir (gitignored).
 
-## 新增 Skill
+## Add a skill
 
-1. 在 `skills/<skill-name>/` 下创建 `SKILL.md`
-2. frontmatter 写好 `name` 与带触发词的 `description`
-3. 在本 README 的 Skills 表中登记一行
-4. commit & push
+1. Create `skills/<skill-name>/SKILL.md`
+2. Frontmatter: `name` + trigger-rich `description` (WHAT + WHEN + search synonyms)
+3. Register a row in this README
+4. Commit and push (skills.sh indexes after publish)
 
 ## License
 
