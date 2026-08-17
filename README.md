@@ -12,12 +12,13 @@ npx skills add fenfenxu/fenfenxu-skills
 
 # Install one skill
 npx skills add fenfenxu/fenfenxu-skills --skill agent-thread-visualizer
+npx skills add fenfenxu/fenfenxu-skills --skill loop-it
 
 # Global install
 npx skills add fenfenxu/fenfenxu-skills -g
 ```
 
-Browse on skills.sh: [agent-thread-visualizer](https://skills.sh/fenfenxu/fenfenxu-skills/agent-thread-visualizer)
+Browse on skills.sh: [agent-thread-visualizer](https://skills.sh/fenfenxu/fenfenxu-skills/agent-thread-visualizer) · [loop-it](https://skills.sh/fenfenxu/fenfenxu-skills/loop-it)
 
 Find via CLI (skills.sh ranks by install count; use `--owner` for a reliable hit while installs are low):
 
@@ -44,6 +45,7 @@ npx skills add /Users/liuxu/repo/local/fenfenxu-skills --list
 |-------|----------------|-----------|
 | [`agent-thread-visualizer`](skills/agent-thread-visualizer) | Host-aware session lookup (ID/name) for Cursor / Codex / Claude Code / Workbuddy / kimi-code; full collect of skills/tools/sub-agents; layered swimlane **execution map** / **agent session timeline** | EN: `agent thread visualizer`, `session timeline`, `session report`, `agent flow`, `execution map`; ZH: `agent 会话可视化`, `会话可视化`, `执行地图`, `会话报告`; JA: `セッション可視化`, `実行マップ`, `エージェント タイムライン` |
 | [`skill-discovery-optimizer`](skills/skill-discovery-optimizer) | Skills SEO / GEO loop: generate multilingual find-skills tests, dual eval (API + `npx skills find`), optimize description, version, publish, re-validate | `skill SEO`, `skill GEO`, `find-skills`, `skills.sh discoverability`, `技能检索优化` |
+| [`loop-it`](skills/loop-it) | Long-running Multica loop: plan → issue tree → one patrol Autopilot → MR closeout. Project facts stay in `.loop-it/config.yaml` | EN: `loop-it`, `Multica patrol`, `issue tree`, `epic follow-up`; ZH: `长程任务闭环`, `巡检程序`, `Issue 树` |
 
 ### agent-thread-visualizer
 
@@ -64,6 +66,21 @@ Skills SEO / GEO closed loop for find-skills:
 ```bash
 npx skills add fenfenxu/fenfenxu-skills --skill skill-discovery-optimizer
 ```
+
+### loop-it
+
+Turns an open-ended coding objective into a bounded Multica loop:
+
+- **Plan** only when no design/plan exists
+- **Issue tree** with staged children and `loop_it_phase=executing`
+- **One patrol Autopilot** for the whole workspace (`run_only`, pointer-only description)
+- **Closeout** after DoD + optional auto-merge from `.loop-it/config.yaml`
+
+```bash
+npx skills add fenfenxu/fenfenxu-skills --skill loop-it -g
+```
+
+Then in a project: `/loop-it init`.
 
 ## Repo layout
 
