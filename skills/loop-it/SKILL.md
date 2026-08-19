@@ -34,11 +34,11 @@ argument-hint: "<新需求 | init | 继续跟进 CAM-17 | 收尾 CAM-17>"
 | 主任务 / 编号（如 `CAM-17`） | 这棵需求的根任务。Multica CLI 仍叫 `issue` |
 | 子任务 | 拆出来的一件件可执行任务 |
 | 巡检 / Loop Patrol | 全仓库唯一的定时 Autopilot，按 cron 扫进行中的主任务 |
-| Autopilot | Multica 的定时任务；本 skill 全仓库只允许这一个巡检实例 |
+| Autopilot | Multica 的定时作业；本 skill 全仓库只允许这一个巡检实例 |
 
 把大需求跑成「计划 → 主任务 + 子任务 → 唯一巡检 Autopilot → 提交 MR 并关闭 → 收尾」。
 
-程序源码在 `fenfenxu/fenfenxu-skills` 的 `skills/loop-it/`。安装后运行时读 `~/.agents/skills/loop-it/`。项目里只放事实：`.loop-it/config.yaml`。禁止把本程序全文复制进 autopilot description、任务、或其他 skill。
+程序源码在 `fenfenxu/fenfenxu-skills` 的 `skills/loop-it/`。安装后运行时读 `~/.agents/skills/loop-it/`。项目里只放事实：`.loop-it/config.yaml`。禁止把本程序全文复制进 autopilot description、任务描述、或其他 skill。
 
 底层 CLI 一律遵循 `multica-cli` skill（`--output json`、评论用 `--content-file`、mention/status 有副作用）。本 skill 只负责编排。
 
