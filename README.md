@@ -43,7 +43,7 @@ npx skills add /Users/liuxu/repo/local/fenfenxu-skills --list
 
 | Skill | What it does | Find with |
 |-------|----------------|-----------|
-| [`agent-thread-visualizer`](skills/agent-thread-visualizer) | Host-aware session lookup (ID/name) for Cursor / Codex / Claude Code / Workbuddy / kimi-code; full collect of skills/tools/sub-agents; layered swimlane **execution map** / **agent session timeline** | EN: `agent thread visualizer`, `session timeline`, `session report`, `agent flow`, `execution map`; ZH: `agent 会话可视化`, `会话可视化`, `执行地图`, `会话报告`; JA: `セッション可視化`, `実行マップ`, `エージェント タイムライン` |
+| [`agent-thread-visualizer`](skills/agent-thread-visualizer) | Host-aware session lookup (ID/name) plus in-package `/find-thread` recall search; full collect of skills/tools/sub-agents; layered swimlane **execution map** / **agent session timeline** | EN: `agent thread visualizer`, `session timeline`, `/find-thread`, `find session`; ZH: `agent 会话可视化`, `会话可视化`, `查找会话`, `找上次那个会话`; JA: `セッション可視化`, `実行マップ` |
 | [`skill-discovery-optimizer`](skills/skill-discovery-optimizer) | Skills SEO / GEO loop: generate multilingual find-skills tests, dual eval (API + `npx skills find`), optimize description, version, publish, re-validate | `skill SEO`, `skill GEO`, `find-skills`, `skills.sh discoverability`, `技能检索优化` |
 | [`loop-it`](skills/loop-it) | Long-running Multica loop: plan → issue tree → one patrol Autopilot → MR closeout. Project facts stay in `.loop-it/config.yaml` | EN: `loop-it`, `Multica patrol`, `issue tree`, `epic follow-up`; ZH: `长程任务闭环`, `巡检程序`, `Issue 树` |
 
@@ -52,6 +52,7 @@ npx skills add /Users/liuxu/repo/local/fenfenxu-skills --list
 Turns opaque agent runs into readable execution maps:
 
 - **Locate**: Cursor, Codex, Claude Code, Workbuddy, kimi-code sessions by ID or title
+- **Recall search**: in-package slash command `/find-thread` when you remember the project and what you did, not the title — ranked **最相关** / **可能相关** cards
 - **Collect**: stages, loaded skills, tool calls, sub-agents, retries, forks, waits, worktree context
 - **Show**: primary/secondary layered swimlanes; expandable detail; optional session-health tips
 
