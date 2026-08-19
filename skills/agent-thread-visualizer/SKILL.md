@@ -7,10 +7,11 @@ description: >-
   thread visualizer, agent-thread-visualizer, agent session timeline, session
   report, session log analyzer, agent flow visualization, execution map,
   conversation visualizer, subagent timeline, debug agent session, visualize
-  the run, Cursor session, Claude Code session, Workbuddy session, kimi-code
-  session. (ZH): agent 会话可视化, 会话可视化, agent 时间线, 子agent 可视化,
-  会话报告, 会话分析, 执行地图, agent 执行流程, 调试 agent 会话, Cursor 会话,
-  Claude Code 会话, Workbuddy 会话, kimi-code 会话. (JA): エージェント
+  the run, /find-thread, find that session, Cursor session, Claude Code session,
+  Workbuddy session, kimi-code session. (ZH): agent 会话可视化, 会话可视化,
+  agent 时间线, 子agent 可视化, 会话报告, 会话分析, 执行地图, agent 执行流程,
+  调试 agent 会话, 查找会话, 找上次那个会话, Cursor 会话, Claude Code 会话,
+  Workbuddy 会话, kimi-code 会话. (JA): エージェント
   セッション 可視化, セッション可視化, エージェント タイムライン,
   サブエージェント 可視化, セッションレポート, 実行マップ, エージェント
   実行フロー, Cursor セッション, Claude Code セッション, Workbuddy
@@ -56,7 +57,9 @@ python3 scripts/find-thread-by-name --json 水火箭
 
 脚本默认按 cwd 收窄项目；内容走 `~/.cache/agent-thread-find/`。多命中时把表格给用户选（并看 `MATCH_VIA` / JSON 的 `match_via`：`title-exact` > `title-substr` > `title-fuzzy` > `title-tokens` > `prompt-*`；`title-fuzzy` / token 质量基于编辑距离）；零命中再换另一种查找方式、读宿主手册或问路径。
 
-然后按 [references/hosts.md](references/hosts.md) 核对宿主，并打开对应手册（如 [host-cursor.md](references/host-cursor.md)）。默认只查当前宿主；用户点名其他工具才跨宿主。未收录宿主走通用回退，不拒绝执行。
+用户记得「在哪个项目做了啥」但记不住标题或 UUID 时：**不要在这里按「当前宿主优先」直接可视化**。改读并执行本包 slash 命令 [find-thread/SKILL.md](find-thread/SKILL.md)（`/find-thread`）：全宿主回忆检索、最相关/可能相关卡片。用户选定一条并要求画图后，再回到本文件继续采集与可视化。
+
+然后按 [references/hosts.md](references/hosts.md) 核对宿主，并打开对应手册（如 [host-cursor.md](references/host-cursor.md)）。**可视化查找**默认只查当前宿主；用户点名其他工具才跨宿主。回忆查找（`/find-thread`）默认全宿主，规则见该命令。未收录宿主走通用回退，不拒绝执行。
 
 ### 2. 确定分析范围
 
@@ -176,6 +179,7 @@ python3 scripts/find-thread-by-name --json 水火箭
 | [scripts/_find_thread_common.py](scripts/_find_thread_common.py) | 上述两者的共享实现（不要直接当入口） |
 | [scripts/find-thread](scripts/find-thread) | 已废弃：打印用法并 exit 2，提醒改用上面两个 |
 | [scripts/verify-find-thread.py](scripts/verify-find-thread.py) | 按 host 手册路径抽样真实会话，分别回查 by-id / by-name（见 [VERIFY.md](scripts/VERIFY.md)） |
+| [find-thread/SKILL.md](find-thread/SKILL.md) | 包内 slash 命令 `/find-thread`：按回忆查找会话，输出最相关/可能相关卡片（不是独立 skill） |
 
 相对本 skill 根目录调用。从其他 cwd 跑时，传入本 skill 内脚本的绝对路径。
 
@@ -188,3 +192,4 @@ python3 scripts/find-thread-by-name --json 水火箭
 - 把 skill 脚本装进用户 PATH 或当成系统工具分发
 - 在本文件复制或猜测宿主落盘路径（应读 `references/host-*.md`）
 - 多命中时静默挑一个，不给用户选
+- 把 `/find-thread` 做成仓库里另一个一级 skill

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Find Thread"
+  short_description: "Slash command of agent-thread-visualizer: find a past session by project / what you did / optional host."
+  default_prompt: "This is /find-thread inside agent-thread-visualizer, not a separate skill. Parse recall into keywords/host/project. Run this package's scripts/find-thread-by-id or find-thread-by-name --json (all hosts unless named). Cascade to --deep for activity-shaped queries. Present 最相关 and 可能相关 cards with summary, file:// path, full id. Do not auto-visualize or invent deeplinks."
