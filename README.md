@@ -45,7 +45,7 @@ npx skills add /Users/liuxu/repo/local/fenfenxu-skills --list
 |-------|----------------|-----------|
 | [`agent-thread-visualizer`](skills/agent-thread-visualizer) | Host-aware session lookup (ID/name) plus in-package `/find-thread` recall search; full collect of skills/tools/sub-agents; layered swimlane **execution map** / **agent session timeline** | EN: `agent thread visualizer`, `session timeline`, `/find-thread`, `find session`; ZH: `agent 会话可视化`, `会话可视化`, `查找会话`, `找上次那个会话`; JA: `セッション可視化`, `実行マップ` |
 | [`skill-discovery-optimizer`](skills/skill-discovery-optimizer) | Skills SEO / GEO loop: generate multilingual find-skills tests, dual eval (API + `npx skills find`), optimize description, version, publish, re-validate | `skill SEO`, `skill GEO`, `find-skills`, `skills.sh discoverability`, `技能检索优化` |
-| [`loop-it`](skills/loop-it) | Long-running Multica loop: plan → issue tree → one patrol Autopilot → MR closeout. Project facts stay in `.loop-it/config.yaml` | EN: `loop-it`, `Multica patrol`, `issue tree`, `epic follow-up`; ZH: `长程任务闭环`, `巡检程序`, `Issue 树` |
+| [`loop-it`](skills/loop-it) | Multica 长程任务：计划 → 主任务 + 子任务 → 唯一巡检 Autopilot → 合 PR 收尾。实例事实在 `.loop-it/config.yaml` | EN: `loop-it`, `Loop Patrol`, `Multica Autopilot`; ZH: `长程任务闭环`, `巡检`, `继续跟进` |
 
 ### agent-thread-visualizer
 
@@ -73,15 +73,15 @@ npx skills add fenfenxu/fenfenxu-skills --skill skill-discovery-optimizer
 Turns an open-ended coding objective into a bounded Multica loop:
 
 - **Plan** only when no design/plan exists
-- **Issue tree** with staged children and `loop_it_phase=executing`
-- **One patrol Autopilot** for the whole workspace (`run_only`, pointer-only description)
-- **Closeout** after DoD + optional auto-merge from `.loop-it/config.yaml`
+- **主任务 + 子任务**（子任务可分 stage；主任务 `loop_it_phase=executing`）
+- **唯一巡检 Autopilot**（标题 `Loop Patrol`，全仓库一个，`run_only`，description 只写指针）
+- **收尾** after DoD；是否自动合 PR 看 `.loop-it/config.yaml`
 
 ```bash
 npx skills add fenfenxu/fenfenxu-skills --skill loop-it -g
 ```
 
-Then in a project: `/loop-it init`.
+Then in a project: `/loop-it init`，之后 `/loop-it 继续跟进 CAM-17` 或 `/loop-it 收尾 CAM-17`。
 
 ## Repo layout
 

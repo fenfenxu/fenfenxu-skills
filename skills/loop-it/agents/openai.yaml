@@ -1,5 +1,5 @@
 interface:
   display_name: "Loop It"
-  short_description: "Bounded Multica issue loops with a single patrol"
+  short_description: "Multica long-running work: parent task, one Loop Patrol, closeout"
 policy:
   allow_implicit_invocation: false
