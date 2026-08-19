@@ -1,13 +1,7 @@
 ---
 name: loop-it
 description: >-
-  Use when the user runs /loop-it, inits Multica long-running work in this
-  repo, continues or closes a Multica parent task (编号如 CAM-17), or runs
-  one 巡检 / Loop Patrol round.
-  Triggers (EN): loop-it, loop it, long-running task loop, Multica issue,
-  Multica Autopilot, Loop Patrol, follow parent task, auto-merge PR.
-  (ZH): 长程任务闭环, 任务闭环, 巡检, Multica 巡检, 主任务, 子任务,
-  继续跟进, 收尾, 自动合并 PR.
+  Multica 长程任务闭环：新需求、init、跟进/收尾主任务（编号如 CAM-17）、或跑一轮巡检。
 license: MIT
 metadata:
   author: fenfenxu
@@ -18,29 +12,13 @@ argument-hint: "<新需求 | init | 继续跟进 CAM-17 | 收尾 CAM-17>"
 
 # Loop It：长程任务闭环
 
-用 Multica 把一个大需求从计划做到合并代码并关掉。
+用 Multica 把一个大需求从计划做到合并代码并关掉。底层 CLI 一律遵循 `multica-cli` skill（`--output json`、评论用 `--content-file`、mention/status 有副作用）。本 skill 只负责编排。
 
-怎么喊：
-
-- `/loop-it 做某某功能` — 新需求，还没有主任务
-- `/loop-it init` — 给当前仓库接上巡检
-- `/loop-it 继续跟进 CAM-17` — 只盯这一棵已有主任务
-- `/loop-it 收尾 CAM-17` — 子任务都完成后关掉这棵
-
-几个词（正文后头还是这些意思）：
-
-| 词 | 人话 |
+| 词 | 含义 |
 |----|------|
 | 主任务 / 编号（如 `CAM-17`） | 这棵需求的根任务。Multica CLI 仍叫 `issue` |
 | 子任务 | 拆出来的一件件可执行任务 |
 | 巡检 / Loop Patrol | 全仓库唯一的定时 Autopilot，按 cron 扫进行中的主任务 |
-| Autopilot | Multica 的定时作业；本 skill 全仓库只允许这一个巡检实例 |
-
-把大需求跑成「计划 → 主任务 + 子任务 → 唯一巡检 Autopilot → 提交 MR 并关闭 → 收尾」。
-
-程序源码在 `fenfenxu/fenfenxu-skills` 的 `skills/loop-it/`。安装后运行时读 `~/.agents/skills/loop-it/`。项目里只放事实：`.loop-it/config.yaml`。禁止把本程序全文复制进 autopilot description、任务描述、或其他 skill。
-
-底层 CLI 一律遵循 `multica-cli` skill（`--output json`、评论用 `--content-file`、mention/status 有副作用）。本 skill 只负责编排。
 
 ## 本轮目标
 
@@ -52,24 +30,8 @@ $ARGUMENTS
 
 ## 配置（先读事实，再跑程序）
 
-项目根 `.loop-it/config.yaml` 只放实例事实，不放程序。典型字段：
+项目根 `.loop-it/config.yaml` 只放实例事实。读 `workspace`、`project`、`base_branch`、`repo`、`executors`、`orchestrator`、`patrol.cron`、`patrol.auto_merge`、`daily_digest.*`，不要写死。
 
-```yaml
-workspace: <multica workspace slug>
-project: null
-base_branch: <baseline branch>
-repo: <owner/name>
-executors: [<agent>, ...]
-orchestrator: <agent>
-patrol:                    # 巡检（Loop Patrol）的节奏与是否自动合 PR
-  cron: "*/15 * * * *"
-  auto_merge: true
-daily_digest:
-  enabled: true
-  issue_key: <日报主任务编号>
-```
-
-- 仓库 / 基线分支 / merge repo / 执行者 / 巡检 cron：**一律读 config**，不要写死。
 - 没有 config → 先跑 `init`，不要猜。
 - 自动合并：仅当 `patrol.auto_merge: true` 且 DoD + CI 全绿。`gh pr merge` 的 `--repo` 取 `repo` 字段。
 
@@ -86,7 +48,7 @@ daily_digest:
 | 主任务已存在（如 `继续跟进 MUL-xxx`） | 读 metadata / 计划路径 → 巡检程序（只处理这一棵树） |
 | `收尾 MUL-xxx` | Phase 5 |
 
-已有计划时：确认计划路径写入主任务 `plan_path` metadata；可轻量核对「子任务是否覆盖计划」，但不要重写计划、不要再走一轮「先确认计划」。**同样先确认计划/方案改动已 commit + push 到远端**，否则 agent 拉代码时拿不到。
+已有计划：写入主任务 `plan_path`，确认计划/方案已 commit + push。可轻量核对「子任务是否覆盖计划」，不要重写计划。
 
 **禁止**为单个任务创建 Autopilot。全 workspace 只允许一个通用巡检 autopilot（由 `init` 创建）。发现 per-task autopilot 视为事故：删除并复盘。
 
@@ -101,7 +63,23 @@ daily_digest:
 
 在**当前仓库根**执行。已存在的文件和实例只修补差异，不覆盖用户改过的事实。输出一份差异报告（新建 / 已存在且一致 / 已修复）。
 
-1. **生成** `.loop-it/config.yaml`（若不存在）。向用户确认 workspace、`base_branch`、`repo`、executors、orchestrator；巡检默认 `*/15`、`auto_merge: true`。
+1. **生成** `.loop-it/config.yaml`（若不存在）。向用户确认 workspace、`base_branch`、`repo`、executors、orchestrator；巡检默认 `*/15`、`auto_merge: true`：
+
+   ```yaml
+   workspace: <multica workspace slug>
+   project: null
+   base_branch: <baseline branch>
+   repo: <owner/name>
+   executors: [<agent>, ...]
+   orchestrator: <agent>
+   patrol:
+     cron: "*/15 * * * *"
+     auto_merge: true
+   daily_digest:
+     enabled: true
+     issue_key: <日报主任务编号>
+   ```
+
 2. **注入** 项目 `AGENTS.md` 的「Agent 工作流不变量」小节（指针原则 / 静默优先 / 唯一决策点 / 状态语义 / 一个系统一个巡检器）。已有则只校对指针仍指向 `~/.agents/skills/loop-it/`，不复制本 skill 正文。
 3. **建/修唯一巡检 Autopilot**：
    - title：`Loop Patrol`
@@ -123,7 +101,7 @@ daily_digest:
 仅在入口分流判定「尚无可用计划」时执行。
 
 1. 把需求写成计划文档，存 `docs/superpowers/plans/`（或该仓库等价的 plans 目录），含：目标、验收标准、范围边界、拆解思路。
-2. 计划先给用户确认，再进入 Phase 2。计划是后续所有任务的验收依据。
+2. 计划先给用户确认，再进入 Phase 2。
 3. **派发任务前必须 commit + push 计划文档**（以及本轮产生/修改的任何技术方案、设计文档）。Multica agent 执行时是拉远端代码的——不 push，agent 拿到的代码里没有这些改动，`plan_path` 指向的文件对它来说就是 404。
 
 ## Phase 2 — 创建任务树
@@ -138,14 +116,12 @@ multica issue create --title "[MUL-123] ..." --parent <主id> --assignee <execut
 
 executor 取 config `executors`（用户指定则覆盖）。
 
-3. 在主任务 metadata 记录闭环状态。**不要**写 `autopilot_id`（不再为任务建 Autopilot）：
+3. 在主任务 metadata 记录闭环状态。**不要**写 `autopilot_id`：
 
 ```bash
 multica issue metadata set <主id> --key plan_path --value docs/superpowers/plans/xxx.md
 multica issue metadata set <主id> --key loop_it_phase --value executing
 ```
-
-之后由唯一巡检器发现这棵树。零额外配置。
 
 ## 巡检程序
 
@@ -176,5 +152,5 @@ multica issue metadata set <主id> --key loop_it_phase --value executing
 
 1. 对照计划验收标准做总验收。
 2. 主任务置 `done`；`loop_it_phase` → `completed`。
-3. **不要**暂停唯一巡检 Autopilot——它还要看别的树。只把这棵树标 completed。
+3. **不要**暂停唯一巡检 Autopilot。只把这棵树标 completed。
 4. 向用户汇报：产出清单、PR 列表、遗留事项。
