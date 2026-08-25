@@ -72,6 +72,7 @@ npx skills add fenfenxu/fenfenxu-skills --skill skill-discovery-optimizer
 
 Turns an open-ended coding objective into a bounded Multica loop:
 
+- **硬门禁**：无 `.loop-it/config.yaml` 先 `init`；确认 `workspace` → 创建/对齐 Multica `--profile` → 之后拆 issue 必须带该 profile / `workspace_id`（禁止裸 CLI 串仓）
 - **Plan** only when no design/plan exists
 - **主任务 + 子任务**（子任务可分 stage；主任务 `loop_it_phase=executing`）
 - **唯一巡检 Autopilot**（标题 `Loop Patrol`，全仓库一个，`run_only`，description 只写指针）
@@ -81,7 +82,7 @@ Turns an open-ended coding objective into a bounded Multica loop:
 npx skills add fenfenxu/fenfenxu-skills --skill loop-it -g
 ```
 
-Then in a project: `/loop-it init`，之后 `/loop-it 继续跟进 CAM-17` 或 `/loop-it 收尾 CAM-17`。
+Then in a project: `/loop-it init`（含 workspace + profile 绑定），之后 `/loop-it 继续跟进 CAM-17` 或 `/loop-it 收尾 CAM-17`。
 
 ## Repo layout
 
