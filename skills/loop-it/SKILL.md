@@ -112,7 +112,7 @@ $ARGUMENTS
 5. **建/修唯一巡检 Autopilot**（在已绑定 workspace 下）：title `Loop Patrol`；agent=`orchestrator`；mode=`run_only`。description **必须内嵌完整巡检程序**（由 config 填空；`repo` 为 `owner/name` 时 checkout URL 用 `https://github.com/<repo>.git`；已是 URL 则原样）。改 `base_branch` / `repo` / 巡检规则后必须再 `autopilot update` 同步 description：
 
    ```text
-   你是 Loop Patrol（run_only）。本 description 即本轮编排程序（启动 + 巡检 + 收尾）。只做下列步骤；无动作则静默。CLI 用 runtime 已注入的 multica-*；编排不必再找 loop-it。
+   你是 Loop Patrol（run_only）。本 description 即本轮编排程序（启动 + 巡检 + 收尾）。只做下列步骤；无动作则静默。CLI 用 runtime 已注入的 multica-*。
 
    ## 启动
    1. multica repo checkout <repo_clone_url> --ref <base_branch>
