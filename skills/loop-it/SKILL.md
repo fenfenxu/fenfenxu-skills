@@ -125,13 +125,13 @@ $ARGUMENTS
 
    1. 常驻汇总（每天最多一次）：若 config.daily_digest.enabled，检查 daily_digest.issue_key 今日是否已有 Patrol 汇总评论；没有则写一条（红灯 / 待拍板 / 卡住）；已有则跳过。就是往该常驻 issue 留评，不是另发渠道。
    2. sweep（可选）：仅当本 workspace 存在标题含 Loop It/Loop Patrol、且状态非 done/cancelled 的运行 issue 时，将其置 done；没有则跳过。
-   3. 活跃主任务：只扫 metadata loop_it_phase=executing（与 Phase 2 写入的键一致；定时 run 无用户对话，不靠点名）。
-      a. 以该主任务近评 + 当前 issue/PR 状态为准（可选对照最近一次 completed autopilot run 的 output）；相对上一轮实质结论未变 → 跳过深读（无评论）。
-      b. 否则读 children + 近评：blocked 能解就解否则升级；标完成未验证则对照 plan 打回或放行下一 stage。
+   3. 活跃主任务：只扫 metadata loop_it_phase=executing（与 Phase 2 写入的键一致；定时 run 无用户对话）。
+      a. 轻量探测：读主任务近评（或最近一次 completed autopilot run 的 output）+ 该 issue 的 updated_at/last_activity_at。若上轮实质结论仍成立（如 hold 某 PR、等人工），且活动时间未新于该结论 → **短路收尾**：禁止 children 全量、禁止 gh pr view、禁止 autopilot list、禁止 git branch；无评论，进入收尾。
+      b. 仅当活动时间变新或结论可能失效时：读 children + 近评；blocked 能解就解否则升级；标完成未验证则对照 plan 打回或放行下一 stage。
       c. 验收通过：multica issue pull-requests 核 PR；patrol.auto_merge 且 DoD+CI 全绿则 gh pr merge --repo <repo>（不强推）；子任务 done 并解锁下一 stage。否则 hold，不刷屏。
       d. 有实质动作才在主任务留短评。
    4. 子任务全 done/cancelled → 主任务可收尾（done + loop_it_phase=completed）；不停本 Autopilot。
-   5. per-task Loop It Autopilot：paused 的忽略；active 的在 daily_digest.issue_key 记一条（每天最多一次），本轮不删。
+   5. per-task Loop It Autopilot：默认不 list；仅当本轮已确认有实质推进时再查。paused 忽略；active 的在 daily_digest.issue_key 记一条（每天最多一次），本轮不删。
 
    ## 收尾
    本轮结束：run_only 无关联 issue 时直接收尾；有 agent task 则收成 done 或 blocked。
@@ -168,9 +168,9 @@ $ARGUMENTS
 0. 若尚无本仓 / 无 `.loop-it/config.yaml`：checkout 后读 config（本机通常已在仓库根）。
 1. **常驻汇总（每天最多一次）**：若 `daily_digest.enabled`，检查 `daily_digest.issue_key` 今日是否已有 Patrol 汇总评论；没有则写一条（红灯 / 待拍板 / 卡住）。就是往该常驻 issue 留评。
 2. **sweep（可选）**：仅存在标题含 Loop It/Loop Patrol 且非 done/cancelled 的运行 issue 时置 done；没有则跳过。
-3. **活跃主任务**：只扫 `loop_it_phase=executing`（本机跟进可另加用户点名的那一棵）。以主任务近评 + 当前 issue/PR 为准；结论未变则跳过深读。否则读 children + 近评；**(a)** blocked 能解就解否则升级；**(b)** 标完成未验证则对照计划打回或放行；**(c)** 验收通过则核 PR，`patrol.auto_merge` 且 DoD+CI 过则 `gh pr merge`（不强推），子任务 `done` 并解锁下一 stage。有动作才留短评。
+3. **活跃主任务**：只扫 `loop_it_phase=executing`（本机跟进可另加用户点名的那一棵）。轻量探测近评/`updated_at`；结论未变且活动时间未新于结论 → **短路**（禁止 children 全量、`gh pr view`、autopilot list）。否则读 children + 近评；**(a)** blocked 能解就解否则升级；**(b)** 标完成未验证则对照计划打回或放行；**(c)** 验收通过则核 PR，`patrol.auto_merge` 且 DoD+CI 过则 `gh pr merge`（不强推），子任务 `done` 并解锁下一 stage。有动作才留短评。
 4. 子任务全 `done`/`cancelled` → Phase 5。
-5. **per-task Autopilot**：paused 忽略；active 的在 `daily_digest.issue_key` 记一条（每天最多一次），本轮不删。
+5. **per-task Autopilot**：默认不 list；仅确认有实质推进时再查。paused 忽略；active 的在 `daily_digest.issue_key` 记一条（每天最多一次），本轮不删。
 
 ## Phase 5 — 收尾
 
