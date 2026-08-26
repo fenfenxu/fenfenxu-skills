@@ -105,25 +105,25 @@ $ARGUMENTS
      auto_merge: true
    daily_digest:
      enabled: true
-     issue_key: <日报主任务编号>
+     issue_key: <常驻汇总 issue，如 GAN-372>
    ```
 
 4. **注入** `AGENTS.md`「Agent 工作流不变量」（§4 不变量 + 授权口径；事实指针 `.loop-it/config.yaml`；**Patrol 程序 SSOT = Autopilot description**）。已有则只校对。
-5. **建/修唯一巡检 Autopilot**（在已绑定 workspace 下）：title `Loop Patrol`；agent=`orchestrator`；mode=`run_only`。description **必须内嵌完整巡检程序**（由 config 填空；`repo` 为 `owner/name` 时 checkout URL 用 `https://github.com/<repo>.git`；已是 URL 则原样）。**禁止** description 写「去读 loop-it skill」——Autopilot 不加载项目/用户 skill。改 `base_branch` / `repo` / 巡检规则后必须再 `autopilot update` 同步 description：
+5. **建/修唯一巡检 Autopilot**（在已绑定 workspace 下）：title `Loop Patrol`；agent=`orchestrator`；mode=`run_only`。description **必须内嵌完整巡检程序**（由 config 填空；`repo` 为 `owner/name` 时 checkout URL 用 `https://github.com/<repo>.git`；已是 URL 则原样）。改 `base_branch` / `repo` / 巡检规则后必须再 `autopilot update` 同步 description：
 
    ```text
-   你是 Loop Patrol（run_only）。本 description 即本轮全部程序；禁止 init、Phase 1/2、向用户提问；禁止查找或阅读 loop-it / 任何 SKILL.md。
+   你是 Loop Patrol（run_only）。本 description 即本轮编排程序（启动 + 巡检 + 收尾）。只做下列步骤；无动作则静默。CLI 用 runtime 已注入的 multica-*；编排不必再找 loop-it。
 
    ## 启动
    1. multica repo checkout <repo_clone_url> --ref <base_branch>
-      （不要加 --output；禁止到其他 workspace/workdir 找 config）
+      （不要加 --output；不要到其他 workspace/workdir 找 config）
    2. 进入检出目录；读 .loop-it/config.yaml；校验 repo/base_branch 与上列一致。
-   3. CLI：裸 multica（task 身份；禁止 --profile）。issue/PR 细节用 runtime 已注入的 multica-* skills。
+   3. CLI：裸 multica（task 身份；不要加 --profile）。
 
-   ## 巡检（按序；静默优先：无动作则无聊天产出）
-   护栏：只改 Multica issue/评论（及合规时 gh pr merge --repo <repo>）。不改业务代码/plan/.loop-it；禁止 git push <base_branch>；不改 .env*；反复失败写 blocked_reason 并升级。
+   ## 巡检（按序；无动作则无聊天产出）
+   护栏：只改 Multica issue/评论（及合规时 gh pr merge --repo <repo>）。不改业务代码/plan/.loop-it；不要 git push <base_branch>；不改 .env*；反复失败写 blocked_reason 并升级。
 
-   1. 日报：若 config daily_digest.enabled 且今日尚未写，汇总红灯/待拍板/卡住到 daily_digest.issue_key；已写则跳过。
+   1. 常驻汇总（每天最多一次）：若 config.daily_digest.enabled，检查该 issue（daily_digest.issue_key）今日是否已有 Patrol 汇总评论；没有则写一条（红灯 / 待拍板 / 卡住）；已有则跳过。这不是另发渠道，就是往那个常驻 issue 留评。
    2. sweep：己方历史 Loop It / Loop Patrol 运行任务置 done（run_only 无关联 issue 则跳过）。
    3. 活跃主任务（metadata loop_it_phase=executing，或用户点名）：
       a. 先读近评 + 上一轮 Patrol 结论；若 issue/PR 状态未变且结论仍成立 → 跳过深读（无评论）。
@@ -166,7 +166,7 @@ $ARGUMENTS
 护栏：不改业务代码 / plan / `.loop-it`；禁止 `git push` 到 `base_branch`（合入只走 `gh pr merge`）。**不限制** executor 在自己功能分支上 commit/push。不改 `.env*`；反复失败写 `blocked_reason` 并升级。
 
 0. 若尚无本仓 / 无 `.loop-it/config.yaml`：checkout 后读 config（本机通常已在仓库根）。
-1. **日报（每天首轮）**：若开启且今日未写，汇总红灯/待拍板/卡住到 `daily_digest.issue_key`。
+1. **常驻汇总（每天最多一次）**：若 `daily_digest.enabled`，检查 `daily_digest.issue_key` 对应 issue 今日是否已有 Patrol 汇总评论；没有则写一条（红灯 / 待拍板 / 卡住）。就是往那个常驻 Multica issue 留评，不是另发渠道。
 2. **sweep**：己方历史 `Loop It`/`Loop Patrol` 运行任务置 `done`。
 3. **活跃主任务**（`loop_it_phase=executing` 或用户点名）：先读近评——结论未变则跳过深读。否则读 children + 近评；**(a)** blocked 能解就解否则升级；**(b)** 标完成未验证则对照计划打回或放行；**(c)** 验收通过则核 PR，`patrol.auto_merge` 且 DoD+CI 过则 `gh pr merge`（不强推），子任务 `done` 并解锁下一 stage。有动作才留短评。
 4. 子任务全 `done`/`cancelled` → Phase 5。
