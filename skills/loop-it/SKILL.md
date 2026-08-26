@@ -112,29 +112,47 @@ $ARGUMENTS
 5. **建/修唯一巡检 Autopilot**（在已绑定 workspace 下）：title `Loop Patrol`；agent=`orchestrator`；mode=`run_only`。description **必须内嵌完整巡检程序**（由 config 填空；`repo` 为 `owner/name` 时 checkout URL 用 `https://github.com/<repo>.git`；已是 URL 则原样）。改 `base_branch` / `repo` / 巡检规则后必须再 `autopilot update` 同步 description：
 
    ```text
-   你是 Loop Patrol（run_only）。本 description 即本轮编排程序（启动 + 巡检 + 收尾）。只做下列步骤；无动作则静默。CLI 用 runtime 已注入的 multica-*。
+   你是 Loop Patrol（run_only）。本 description 即本轮编排程序（已注入；禁止 autopilot get 自己）。无动作则静默。只用下列「允许命令」；缺什么也不要 --help / 试 flag。
+
+   ## 允许命令（复制即用；除此以外默认禁止）
+   A. multica repo checkout <repo_clone_url> --ref <base_branch>
+   B. （Read 工具）读检出目录 .loop-it/config.yaml
+   C. multica issue comment list <daily_digest.issue_key> --roots-only --summary --recent 5 --output json --compact
+   D. multica issue list --metadata loop_it_phase=executing --limit 20 --output json
+   E. multica issue get <ID> --output json
+   F. multica issue comment list <ID> --roots-only --summary --recent 3 --output json --compact
+   G. multica autopilot runs <本autopilot_id> --limit 2 --output json
+   仅当未短路时才允许：
+   H. multica issue children <ID> --output json
+   I. multica issue pull-requests <ID> --output json
+   J. gh pr view / gh pr checks / gh pr merge --repo <repo> …
+   K. 写评论 / 改 issue 状态（有实质动作时）
+   L. multica autopilot list --output json（仅本轮已确认有实质推进时）
+
+   ## 全程禁止
+   - 任何 --help；对 issue list 加 --compact（该子命令无此 flag；--compact 仅用于 comment list）
+   - git branch / git log；checkout 成功后勿再验分支
+   - 为「确认无变化」调用 H/I/J/L，或全量翻页 issue list
+   - 并行乱开未在白名单的探测
 
    ## 启动
-   1. multica repo checkout <repo_clone_url> --ref <base_branch>
-      （不要加 --output；不要到其他 workspace/workdir 找 config）
-   2. 进入检出目录；读 .loop-it/config.yaml；校验 repo/base_branch 与上列一致。键名以该 config 为准（daily_digest / patrol.auto_merge 等）。
-   3. CLI：裸 multica（task 身份；不要加 --profile）。
+   1. 执行 A → 进入检出目录 → B；校验 repo/base_branch 与上列一致。键名以 config 为准（daily_digest / patrol.auto_merge）。
+   2. CLI：裸 multica（不要 --profile）。
 
-   ## 巡检（按序；无动作则无聊天产出）
-   护栏：只改 Multica issue/评论（及合规时 gh pr merge --repo <repo>）。不改业务代码/plan/.loop-it；不要 git push <base_branch>；不改 .env*；反复失败写 blocked_reason 并升级。
+   ## 巡检（严格按序；短路后立即收尾）
+   护栏：只改 Multica issue/评论（及合规时 J）。不改业务代码/plan/.loop-it；不要 git push <base_branch>；不改 .env*；反复失败写 blocked_reason 并升级。
 
-   1. 常驻汇总（每天最多一次）：若 config.daily_digest.enabled，检查 daily_digest.issue_key 今日是否已有 Patrol 汇总评论；没有则写一条（红灯 / 待拍板 / 卡住）；已有则跳过。就是往该常驻 issue 留评，不是另发渠道。
-   2. sweep（可选）：仅当本 workspace 存在标题含 Loop It/Loop Patrol、且状态非 done/cancelled 的运行 issue 时，将其置 done；没有则跳过。
-   3. 活跃主任务：只扫 metadata loop_it_phase=executing（与 Phase 2 写入的键一致；定时 run 无用户对话）。
-      a. 轻量探测：读主任务近评（或最近一次 completed autopilot run 的 output）+ 该 issue 的 updated_at/last_activity_at。若上轮实质结论仍成立（如 hold 某 PR、等人工），且活动时间未新于该结论 → **短路收尾**：禁止 children 全量、禁止 gh pr view、禁止 autopilot list、禁止 git branch；无评论，进入收尾。
-      b. 仅当活动时间变新或结论可能失效时：读 children + 近评；blocked 能解就解否则升级；标完成未验证则对照 plan 打回或放行下一 stage。
-      c. 验收通过：multica issue pull-requests 核 PR；patrol.auto_merge 且 DoD+CI 全绿则 gh pr merge --repo <repo>（不强推）；子任务 done 并解锁下一 stage。否则 hold，不刷屏。
-      d. 有实质动作才在主任务留短评。
-   4. 子任务全 done/cancelled → 主任务可收尾（done + loop_it_phase=completed）；不停本 Autopilot。
-   5. per-task Loop It Autopilot：默认不 list；仅当本轮已确认有实质推进时再查。paused 忽略；active 的在 daily_digest.issue_key 记一条（每天最多一次），本轮不删。
+   1. 常驻汇总：若 daily_digest.enabled，只用 C。看近 5 条 root 摘要的日期（Asia/Shanghai）；今日已有 Patrol 汇总 → 跳过；否则写一条（红灯/待拍板/卡住）。禁止为日报拉全量历史评论。
+   2. 活跃主任务轻量探测（必须先于 sweep）：D；若有执行中主任务，再 E +（F 或 G）。禁止本步用 H/I/J/L。
+   3. 短路判定：上轮实质结论仍成立（如 hold 某 PR、等人工），且主任务 updated_at/last_activity_at 未新于该结论 → **短路收尾**：跳过步骤 4–7；无评论；进入收尾。
+   4. （未短路）深读：H + F；blocked 能解就解否则升级；标完成未验证则对照 plan 打回或放行下一 stage。
+   5. （未短路）验收：I；patrol.auto_merge 且 DoD+CI 全绿则 gh pr merge --repo <repo>（不强推）；子任务 done 并解锁下一 stage。否则 hold，不刷屏。
+   6. （未短路）sweep：最多一次 `multica issue list --limit 100 --output json`，筛标题含 Loop It/Loop Patrol 且非 done/cancelled → 置 done；没有则停。禁止翻第二页。
+   7. （未短路）有实质动作才在主任务留短评。per-task Loop It Autopilot 仅此时才可用 L；paused 忽略；active 的在 daily_digest.issue_key 记一条（每天最多一次），本轮不删。
+   8. 子任务全 done/cancelled → 主任务可收尾（done + loop_it_phase=completed）；不停本 Autopilot。
 
    ## 收尾
-   本轮结束：run_only 无关联 issue 时直接收尾；有 agent task 则收成 done 或 blocked。
+   run_only 无关联 issue → 直接结束；有 agent task → done 或 blocked。短路时聊天区也可空。
    ```
 
    schedule=`patrol.cron`，时区 `Asia/Shanghai`；已有同名则 update，不新建第二个。
@@ -166,11 +184,12 @@ $ARGUMENTS
 护栏：不改业务代码 / plan / `.loop-it`；禁止 `git push` 到 `base_branch`（合入只走 `gh pr merge`）。**不限制** executor 在自己功能分支上 commit/push。不改 `.env*`；反复失败写 `blocked_reason` 并升级。
 
 0. 若尚无本仓 / 无 `.loop-it/config.yaml`：checkout 后读 config（本机通常已在仓库根）。
-1. **常驻汇总（每天最多一次）**：若 `daily_digest.enabled`，检查 `daily_digest.issue_key` 今日是否已有 Patrol 汇总评论；没有则写一条（红灯 / 待拍板 / 卡住）。就是往该常驻 issue 留评。
-2. **sweep（可选）**：仅存在标题含 Loop It/Loop Patrol 且非 done/cancelled 的运行 issue 时置 done；没有则跳过。
-3. **活跃主任务**：只扫 `loop_it_phase=executing`（本机跟进可另加用户点名的那一棵）。轻量探测近评/`updated_at`；结论未变且活动时间未新于结论 → **短路**（禁止 children 全量、`gh pr view`、autopilot list）。否则读 children + 近评；**(a)** blocked 能解就解否则升级；**(b)** 标完成未验证则对照计划打回或放行；**(c)** 验收通过则核 PR，`patrol.auto_merge` 且 DoD+CI 过则 `gh pr merge`（不强推），子任务 `done` 并解锁下一 stage。有动作才留短评。
-4. 子任务全 `done`/`cancelled` → Phase 5。
-5. **per-task Autopilot**：默认不 list；仅确认有实质推进时再查。paused 忽略；active 的在 `daily_digest.issue_key` 记一条（每天最多一次），本轮不删。
+1. **常驻汇总**：若 `daily_digest.enabled`，用 `comment list --roots-only --summary --recent 5 --compact` 判今日是否已有汇总；没有再写。禁止拉全量历史。
+2. **活跃主任务轻量探测（先于 sweep）**：`issue list --metadata loop_it_phase=executing` + `issue get` + 近评摘要（或 `autopilot runs --limit 2`）。结论未变且活动时间未新于结论 → **短路**（跳过 children / `gh` / sweep / autopilot list）。
+3. （未短路）读 children + 近评；**(a)** blocked 能解就解否则升级；**(b)** 标完成未验证则对照计划打回或放行；**(c)** 验收通过则核 PR，`patrol.auto_merge` 且 DoD+CI 过则 `gh pr merge`（不强推），子任务 `done` 并解锁下一 stage。有动作才留短评。
+4. （未短路）**sweep**：最多一页 limit=100 筛 Loop It/Loop Patrol 运行 issue → done。
+5. 子任务全 `done`/`cancelled` → Phase 5。
+6. **per-task Autopilot**：默认不 list；仅确认有实质推进时再查。paused 忽略；active 的在 `daily_digest.issue_key` 记一条（每天最多一次），本轮不删。
 
 ## Phase 5 — 收尾
 
