@@ -23,12 +23,14 @@ argument-hint: "<新需求 | init | 继续跟进 CAM-17 | 收尾 CAM-17>"
 
 **开跑前先读**项目根 `.loop-it/config.yaml`（workspace、repo、分支、agent 名单等）。没有就 `init`。
 
+**Patrol 分工（B）**：定时 Autopilot 的程序全文写在 **Autopilot description**（`init` 写入）；Autopilot **不**读本 skill。本 skill 供本机 `/loop-it`（init / Phase / 跟进）使用。
+
 ## 执行上下文
 
-| 你在哪 | Multica CLI |
-|--------|-------------|
-| Multica Autopilot（run_only） | 裸 `multica` |
-| 本机 Cursor | `MC=(multica --profile "$multica_profile")`；CLI 遵循 `multica-cli` skill |
+| 你在哪 | Multica CLI | 程序从哪来 |
+|--------|-------------|-----------|
+| Multica Autopilot（run_only） | 裸 `multica` | **仅** Autopilot description；禁止找/读 loop-it |
+| 本机 Cursor | `MC=(multica --profile "$multica_profile")`；CLI 遵循 `multica-cli` skill | 本 skill |
 
 ## 本轮目标
 
@@ -42,10 +44,10 @@ $ARGUMENTS
 
 多项目并行时**禁止**依赖「上次 `workspace switch` 的默认 profile」。每次开跑：
 
-1. 无 `.loop-it/config.yaml` → **只跑 `init`**，禁止建/拆 issue。（**例外**：入口已判定为「巡检程序」时，按下方「巡检程序」步骤 0 先 checkout，**禁止**改走 init。）
+1. 无 `.loop-it/config.yaml` → **只跑 `init`**，禁止建/拆 issue。（**例外**：Autopilot 已按 description 先 checkout；本机「巡检/跟进」按下方本机巡检步骤 0。）
 2. 读并确认 `workspace`（slug）；与用户冲突则先改 config。
 3. **本机上下文**：确保 `multica_profile`（默认=slug）存在且 `workspace switch` 到该 workspace；`MC=(multica --profile "$multica_profile")`，之后只用 `"${MC[@]}"`。
-4. **Autopilot 上下文**：checkout 后读 `.loop-it/config.yaml` 校验事实即可；API 一律裸 `multica`。
+4. **Autopilot 上下文**：只跟 description；checkout 后读 `.loop-it/config.yaml` 校验事实；API 一律裸 `multica`。
 5. 建出的 identifier 前缀必须属于本 workspace；不对则停手纠错。
 
 ## 配置（先读事实，再跑程序）
@@ -62,7 +64,8 @@ $ARGUMENTS
 | 输入情况 | 起点 |
 |----------|------|
 | `init` / 新项目接入 | `init` 程序 |
-| 巡检者 / Autopilot 触发 /「执行一轮巡检」 | **巡检程序** |
+| Autopilot 触发 | **只执行 description 内嵌程序**（不读本 skill） |
+| 本机「执行一轮巡检」/「继续跟进」 | 下方「巡检程序（本机）」 |
 | 已有设计文档 + 计划文档（路径、`@` 引用，或用户说「按已有 plan 执行」） | 跳过 Phase 1；现有计划即验收依据 → Phase 2（主任务已存在则巡检器会接手，不必再建 Autopilot） |
 | 只有粗糙需求 / 口头目标，尚无书面设计或计划 | Phase 1 |
 | 主任务已存在（如 `继续跟进 MUL-xxx`） | 读 metadata / 计划路径 → 巡检程序（只处理这一棵树） |
@@ -105,19 +108,33 @@ $ARGUMENTS
      issue_key: <日报主任务编号>
    ```
 
-4. **注入** `AGENTS.md`「Agent 工作流不变量」（§4 不变量 + 授权口径；事实指针 `.loop-it/config.yaml`）。已有则只校对。
-5. **建/修唯一巡检 Autopilot**（在已绑定 workspace 下）：title `Loop Patrol`；agent=`orchestrator`；mode=`run_only`。description **由 config 填空**（`repo` 为 `owner/name` 时 checkout URL 用 `https://github.com/<repo>.git`；已是 URL 则原样使用）。改 `base_branch` / `repo` 后必须再 `autopilot update` 同步 description：
+4. **注入** `AGENTS.md`「Agent 工作流不变量」（§4 不变量 + 授权口径；事实指针 `.loop-it/config.yaml`；**Patrol 程序 SSOT = Autopilot description**）。已有则只校对。
+5. **建/修唯一巡检 Autopilot**（在已绑定 workspace 下）：title `Loop Patrol`；agent=`orchestrator`；mode=`run_only`。description **必须内嵌完整巡检程序**（由 config 填空；`repo` 为 `owner/name` 时 checkout URL 用 `https://github.com/<repo>.git`；已是 URL 则原样）。**禁止** description 写「去读 loop-it skill」——Autopilot 不加载项目/用户 skill。改 `base_branch` / `repo` / 巡检规则后必须再 `autopilot update` 同步 description：
 
    ```text
-   你是 Loop Patrol（run_only）。本轮只跑 loop-it「巡检程序」；禁止 init、Phase 1/2、向用户提问。
+   你是 Loop Patrol（run_only）。本 description 即本轮全部程序；禁止 init、Phase 1/2、向用户提问；禁止查找或阅读 loop-it / 任何 SKILL.md。
 
-   启动（Multica cwd 是空沙箱，仓库不会自动检出）：
+   ## 启动
    1. multica repo checkout <repo_clone_url> --ref <base_branch>
       （不要加 --output；禁止到其他 workspace/workdir 找 config）
    2. 进入检出目录；读 .loop-it/config.yaml；校验 repo/base_branch 与上列一致。
-   3. 执行 loop-it skill「巡检程序」（runtime 已继承；跳过 init / Phase 1 / Phase 2）。
-   4. 静默优先：无动作则无聊天产出。只改 Multica issue/评论（及合规时 gh pr merge --repo <repo>）。不改业务代码/plan/.loop-it；禁止 git push <base_branch>；不改 .env*；反复失败写 blocked_reason 并升级。
-   5. 本轮结束：run_only 无关联 issue 时直接收尾；有 agent task 则收成 done 或 blocked。
+   3. CLI：裸 multica（task 身份；禁止 --profile）。issue/PR 细节用 runtime 已注入的 multica-* skills。
+
+   ## 巡检（按序；静默优先：无动作则无聊天产出）
+   护栏：只改 Multica issue/评论（及合规时 gh pr merge --repo <repo>）。不改业务代码/plan/.loop-it；禁止 git push <base_branch>；不改 .env*；反复失败写 blocked_reason 并升级。
+
+   1. 日报：若 config daily_digest.enabled 且今日尚未写，汇总红灯/待拍板/卡住到 daily_digest.issue_key；已写则跳过。
+   2. sweep：己方历史 Loop It / Loop Patrol 运行任务置 done（run_only 无关联 issue 则跳过）。
+   3. 活跃主任务（metadata loop_it_phase=executing，或用户点名）：
+      a. 先读近评 + 上一轮 Patrol 结论；若 issue/PR 状态未变且结论仍成立 → 跳过深读（无评论）。
+      b. 否则读 children + 近评：blocked 能解就解否则升级；标完成未验证则对照 plan 打回或放行下一 stage。
+      c. 验收通过：multica issue pull-requests 核 PR；patrol.auto_merge 且 DoD+CI 全绿则 gh pr merge --repo <repo>（不强推）；子任务 done 并解锁下一 stage。否则 hold，不刷屏。
+      d. 有实质动作才在主任务留短评。
+   4. 子任务全 done/cancelled → 主任务可收尾（done + loop_it_phase=completed）；不停本 Autopilot。
+   5. 发现 per-task Loop It Autopilot：记录事故，删前须确认；本轮可不删。
+
+   ## 收尾
+   本轮结束：run_only 无关联 issue 时直接收尾；有 agent task 则收成 done 或 blocked。
    ```
 
    schedule=`patrol.cron`，时区 `Asia/Shanghai`；已有同名则 update，不新建第二个。
@@ -140,17 +157,19 @@ $ARGUMENTS
 3. 核对 identifier 前缀属于本 workspace；不对则停手清理。
 4. metadata：`plan_path`、`loop_it_phase=executing`（不要写 `autopilot_id`）。
 
-## 巡检程序
+## 巡检程序（本机 `/loop-it` 跟进用）
 
-由唯一巡检 Autopilot 或用户「巡检 / 继续跟进」触发。**静默优先：无动作则无产出。**
+**Autopilot Loop Patrol 不读本节**——其程序全文在 Autopilot description（由 `init` 写入）。本机用户说「巡检 / 继续跟进」时按下面做；步骤与 description 模板保持同构。
 
-护栏：巡检不改业务代码 / plan / `.loop-it`；禁止 `git push` 到 `base_branch`（合入只走 `gh pr merge`）。**不限制** executor 在自己功能分支上 commit/push。不改 `.env*`；反复失败写 `blocked_reason` 并升级。
+**静默优先：无动作则无产出。**
 
-0. **空沙箱 bootstrap**（Autopilot run_only 常见）：若 cwd 尚无本仓检出 / 无 `.loop-it/config.yaml`，用 Autopilot description 里的 `repo` + `base_branch` 执行 `multica repo checkout <url> [--ref <base_branch>]`（**不要**加 `--output`）。进入检出目录，读 `.loop-it/config.yaml`。禁止跨 workspace、禁止搜其他 `multica_workspaces/.../workdir` 的 config。
+护栏：不改业务代码 / plan / `.loop-it`；禁止 `git push` 到 `base_branch`（合入只走 `gh pr merge`）。**不限制** executor 在自己功能分支上 commit/push。不改 `.env*`；反复失败写 `blocked_reason` 并升级。
+
+0. 若尚无本仓 / 无 `.loop-it/config.yaml`：checkout 后读 config（本机通常已在仓库根）。
 1. **日报（每天首轮）**：若开启且今日未写，汇总红灯/待拍板/卡住到 `daily_digest.issue_key`。
 2. **sweep**：己方历史 `Loop It`/`Loop Patrol` 运行任务置 `done`。
-3. **活跃主任务**（`loop_it_phase=executing` 或用户点名）：**先读近评**——若已有同结论的 Loop Patrol 评论且 issue/PR 状态未变，跳过深读。否则读 children + 近评；**(a)** blocked 能解就解否则升级；**(b)** 标完成未验证则对照计划打回或放行下一 stage；**(c)** 验收通过则 `multica issue pull-requests` 核 PR，`patrol.auto_merge` 且 DoD 过则 `gh pr merge`（不强推），子任务 `done` 并解锁下一 stage。代码只经 PR 进基线。有动作才在主任务留短评。
-4. 子任务全 `done`/`cancelled` → Phase 5。本轮 agent task（若有）必须收成 `done` 或 `blocked`。
+3. **活跃主任务**（`loop_it_phase=executing` 或用户点名）：先读近评——结论未变则跳过深读。否则读 children + 近评；**(a)** blocked 能解就解否则升级；**(b)** 标完成未验证则对照计划打回或放行；**(c)** 验收通过则核 PR，`patrol.auto_merge` 且 DoD+CI 过则 `gh pr merge`（不强推），子任务 `done` 并解锁下一 stage。有动作才留短评。
+4. 子任务全 `done`/`cancelled` → Phase 5。
 5. 发现 per-task Loop It Autopilot：记录事故，删前须确认。
 
 ## Phase 5 — 收尾
