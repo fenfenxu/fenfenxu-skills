@@ -27,7 +27,7 @@ argument-hint: "<新需求 | init | 继续跟进 CAM-17 | 收尾 CAM-17>"
 
 | 你在哪 | Multica CLI |
 |--------|-------------|
-| Multica Autopilot（run_only） | 裸 `multica`；禁止 `--profile`。CLI 细节见 runtime brief + `multica-working-on-issues` / `multica-autopilots` |
+| Multica Autopilot（run_only） | 裸 `multica` |
 | 本机 Cursor | `MC=(multica --profile "$multica_profile")`；CLI 遵循 `multica-cli` skill |
 
 ## 本轮目标
@@ -115,10 +115,9 @@ $ARGUMENTS
    1. multica repo checkout <repo_clone_url> --ref <base_branch>
       （不要加 --output；禁止到其他 workspace/workdir 找 config）
    2. 进入检出目录；读 .loop-it/config.yaml；校验 repo/base_branch 与上列一致。
-   3. CLI：直接用 multica（task 身份；禁止 --profile）。issue/PR 读 multica-working-on-issues；autopilot/run 读 multica-autopilots。
-   4. 执行 loop-it skill「巡检程序」（runtime 已从 Cursor 继承；跳过 init / Phase 1 / Phase 2）。
-   5. 静默优先：无动作则无聊天产出。只改 Multica issue/评论（及合规时 gh pr merge --repo <repo>）。不改业务代码/plan/.loop-it；禁止 git push <base_branch>；不改 .env*；反复失败写 blocked_reason 并升级。
-   6. 本轮结束：run_only 无关联 issue 时直接收尾；有 agent task 则收成 done 或 blocked。
+   3. 执行 loop-it skill「巡检程序」（runtime 已继承；跳过 init / Phase 1 / Phase 2）。
+   4. 静默优先：无动作则无聊天产出。只改 Multica issue/评论（及合规时 gh pr merge --repo <repo>）。不改业务代码/plan/.loop-it；禁止 git push <base_branch>；不改 .env*；反复失败写 blocked_reason 并升级。
+   5. 本轮结束：run_only 无关联 issue 时直接收尾；有 agent task 则收成 done 或 blocked。
    ```
 
    schedule=`patrol.cron`，时区 `Asia/Shanghai`；已有同名则 update，不新建第二个。
